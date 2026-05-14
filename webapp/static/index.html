@@ -161,6 +161,10 @@
       border: 1px solid #9ae6b4;
       border-radius: 12px;
     }
+    .result-card.zero-rows {
+      background: #fffbeb;
+      border-color: #f6e05e;
+    }
     .result-title {
       font-size: 14px;
       font-weight: 700;
@@ -379,7 +383,7 @@
       <div class="log-wrap" id="logWrap"></div>
 
       <div class="result-card" id="resultCard">
-        <div class="result-title">✅ Extraction complete</div>
+        <div class="result-title" id="resultTitle">✅ Extraction complete</div>
         <div class="stats-grid">
           <div class="stat-box">
             <div class="stat-label">Rows</div>
@@ -417,7 +421,7 @@
     <div class="history-header">
       <div class="history-title">Extraction History</div>
     </div>
-    <div id="historyList"><div class="history-empty">No extractions yet this session.</div></div>
+    <div id="historyList"><div class="history-empty">Loading history…</div></div>
   </div>
 
   <script>
@@ -607,9 +611,22 @@
 
           warnRow.style.display = 'flex';
 
+          // Warn prominently if nothing was extracted
+          if (r.rows === 0) {
+            resultCard.classList.add('zero-rows');
+            document.getElementById('resultTitle').textContent =
+              '⚠ Extraction complete — no financial data found';
+            document.getElementById('resultTitle').style.color = '#975a16';
+            addLog('WARNING: 0 rows extracted. The PDF may not contain audited financial statements, or the text could not be read (scanned image). Cost was still incurred for LLM processing.', 'WARNING');
+          } else {
+            resultCard.classList.remove('zero-rows');
+            document.getElementById('resultTitle').textContent = '✅ Extraction complete';
+            document.getElementById('resultTitle').style.color = '#276749';
+          }
+
           resultCard.style.display  = 'block';
           downloadBtn.href          = '/download/' + jobId;
-          downloadBtn.style.display = 'block';
+          if (r.rows > 0) downloadBtn.style.display = 'block';
           extractBtn.disabled       = false;
           extractBtn.textContent    = 'Extract Another PDF';
           loadHistory();
@@ -653,7 +670,7 @@
     function renderHistory(jobs) {
       const list = document.getElementById('historyList');
       if (!jobs.length) {
-        list.innerHTML = '<div class="history-empty">No extractions yet this session.</div>';
+        list.innerHTML = '<div class="history-empty">No extractions yet.</div>';
         return;
       }
       list.innerHTML = jobs.map(j => {

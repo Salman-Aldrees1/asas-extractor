@@ -123,8 +123,29 @@ def init_db() -> None:
             conn.commit()
         log.info("DB schema ready")
         _seed_coa()
+        _clear_stale_running()
     except Exception as exc:
         log.error("DB init failed: %s", exc)
+
+
+def _clear_stale_running() -> None:
+    """On startup, any job still marked 'running' from a previous server instance
+    never finished. Mark them failed so they don't appear stuck forever."""
+    try:
+        with _connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE extractions
+                    SET status = 'failed',
+                        error  = 'Interrupted — server restarted before extraction completed'
+                    WHERE status = 'running'
+                """)
+                count = cur.rowcount
+            conn.commit()
+        if count:
+            log.warning("Marked %d stale running job(s) as failed", count)
+    except Exception as exc:
+        log.error("_clear_stale_running failed: %s", exc)
 
 
 def _seed_coa() -> None:
