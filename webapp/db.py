@@ -113,6 +113,26 @@ def init_db() -> None:
                     ALTER TABLE financial_values
                         ADD COLUMN IF NOT EXISTS period_type TEXT;
 
+                    -- Add columns to extractions that predate the star schema
+                    ALTER TABLE extractions
+                        ADD COLUMN IF NOT EXISTS company_id          UUID REFERENCES companies(company_id),
+                        ADD COLUMN IF NOT EXISTS fiscal_year_current INTEGER,
+                        ADD COLUMN IF NOT EXISTS fiscal_year_prior   INTEGER;
+
+                    -- Drop old text columns if they exist (replaced by company_id FK)
+                    -- Using DO block so it doesn't error if columns are already gone
+                    DO $$
+                    BEGIN
+                        IF EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name='extractions' AND column_name='company') THEN
+                            ALTER TABLE extractions DROP COLUMN company;
+                        END IF;
+                        IF EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name='extractions' AND column_name='period') THEN
+                            ALTER TABLE extractions DROP COLUMN period;
+                        END IF;
+                    END $$;
+
                     CREATE INDEX IF NOT EXISTS idx_fv_company_year
                         ON financial_values(company_id, fiscal_year);
                     CREATE INDEX IF NOT EXISTS idx_fv_std_item
