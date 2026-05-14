@@ -92,6 +92,7 @@ def init_db() -> None:
                         company_id       UUID NOT NULL REFERENCES companies(company_id),
                         extraction_id    TEXT NOT NULL REFERENCES extractions(id),
                         fiscal_year      INTEGER NOT NULL,
+                        period_type      TEXT,
                         parent_statement TEXT,
                         parent_section   TEXT,
                         parent_caption   TEXT,
@@ -107,6 +108,10 @@ def init_db() -> None:
                         row_type         TEXT,
                         value            DECIMAL(20, 2)
                     );
+
+                    -- Add period_type to existing tables that predate this column
+                    ALTER TABLE financial_values
+                        ADD COLUMN IF NOT EXISTS period_type TEXT;
 
                     CREATE INDEX IF NOT EXISTS idx_fv_company_year
                         ON financial_values(company_id, fiscal_year);
@@ -333,9 +338,9 @@ def save_financial_values(
         "cross_reference", "row_type",
     )
 
-    def _row_tuple(mr: dict, fiscal_year: int, value) -> tuple:
+    def _row_tuple(mr: dict, fiscal_year: int, value, period_type: str) -> tuple:
         return (
-            company_id, extraction_id, fiscal_year,
+            company_id, extraction_id, fiscal_year, period_type,
             mr.get("parent_statement"), mr.get("parent_section"),
             mr.get("parent_caption"), mr.get("std_parent_code"),
             mr.get("std_parent_name"), mr.get("note_number"),
@@ -350,9 +355,9 @@ def save_financial_values(
         vc = mr.get("value_current")
         vp = mr.get("value_prior")
         if fiscal_year_current is not None and vc is not None:
-            rows_to_insert.append(_row_tuple(mr, fiscal_year_current, vc))
+            rows_to_insert.append(_row_tuple(mr, fiscal_year_current, vc, "Main"))
         if fiscal_year_prior is not None and vp is not None:
-            rows_to_insert.append(_row_tuple(mr, fiscal_year_prior, vp))
+            rows_to_insert.append(_row_tuple(mr, fiscal_year_prior, vp, "Prior"))
 
     if not rows_to_insert:
         return
@@ -364,7 +369,7 @@ def save_financial_values(
                     cur,
                     """
                     INSERT INTO financial_values
-                        (company_id, extraction_id, fiscal_year,
+                        (company_id, extraction_id, fiscal_year, period_type,
                          parent_statement, parent_section, parent_caption,
                          std_parent_code, std_parent_name,
                          note_number, note_section, note_sub_section,
