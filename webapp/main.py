@@ -15,8 +15,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse, Response
-from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response, StreamingResponse
 
 # Load .env before importing the pipeline so ANTHROPIC_API_KEY is available.
 load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=True)
@@ -24,15 +23,16 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=True)
 from llm_pdf_pipeline.pipeline.orchestrator import extract_pdf  # noqa: E402
 from webapp import auth, db  # noqa: E402
 
-import os
-_SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-only-secret-change-me-in-prod")
-
 app = FastAPI(title="Asas Financial Extractor")
-app.add_middleware(SessionMiddleware, secret_key=_SESSION_SECRET, max_age=60 * 60 * 24 * 30)
+# No middleware — we sign/verify session cookies directly in each route handler
+# to avoid BaseHTTPMiddleware buffering SSE streaming responses.
 
 _STATIC  = Path(__file__).resolve().parent / "static"
 _OUTPUTS = Path(tempfile.gettempdir()) / "asas_outputs"
 _OUTPUTS.mkdir(parents=True, exist_ok=True)
+
+_COOKIE_NAME = "asas_session"
+_COOKIE_MAX_AGE = 60 * 60 * 24 * 30   # 30 days
 
 
 @app.on_event("startup")
@@ -42,11 +42,16 @@ def _startup() -> None:
 
 # ── Auth helpers ───────────────────────────────────────────────────────────────
 
+def _get_user(request: Request) -> Optional[str]:
+    token = request.cookies.get(_COOKIE_NAME)
+    return auth.verify_token(token) if token else None
+
+
 def _logged_in(request: Request) -> bool:
-    return bool(request.session.get("user"))
+    return bool(_get_user(request))
+
 
 def _guard(request: Request) -> None:
-    """Raise 401 for API routes when not logged in."""
     if not _logged_in(request):
         raise HTTPException(status_code=401, detail="Not authenticated")
 
@@ -57,7 +62,7 @@ def _guard(request: Request) -> None:
 class _Job:
     id: str
     filename: str = ""
-    status: str = "pending"          # pending | running | done | failed
+    status: str = "pending"
     messages: queue.Queue = field(default_factory=queue.Queue)
     result: Optional[dict] = None
     xlsx_path: Optional[str] = None
@@ -108,7 +113,6 @@ def _run_extraction(job: _Job, pdf_path: Path) -> None:
         job.period    = f"{result.get('period_current', '')} / {result.get('period_prior', '')}".strip(" /")
         job.status    = "done"
 
-        # Resolve company ID (create if first time)
         company_id = db.get_or_create_company(job.company)
 
         db.upsert_extraction(
@@ -119,7 +123,6 @@ def _run_extraction(job: _Job, pdf_path: Path) -> None:
             result=result, xlsx_path=job.xlsx_path,
         )
 
-        # Persist financial data rows into the fact table
         db.save_financial_values(
             company_id=company_id or "",
             extraction_id=job.id,
@@ -158,15 +161,21 @@ async def login(request: Request) -> Response:
     username = str(form.get("username", ""))
     password = str(form.get("password", ""))
     if auth.check_credentials(username, password):
-        request.session["user"] = username
-        return RedirectResponse(url="/", status_code=302)
+        token = auth.make_token(username)
+        response = RedirectResponse(url="/", status_code=302)
+        response.set_cookie(
+            _COOKIE_NAME, token,
+            max_age=_COOKIE_MAX_AGE, httponly=True, samesite="lax",
+        )
+        return response
     return RedirectResponse(url="/login?error=1", status_code=302)
 
 
 @app.get("/logout")
-def logout(request: Request) -> RedirectResponse:
-    request.session.clear()
-    return RedirectResponse(url="/login", status_code=302)
+def logout() -> RedirectResponse:
+    response = RedirectResponse(url="/login", status_code=302)
+    response.delete_cookie(_COOKIE_NAME)
+    return response
 
 
 # ── Main routes ────────────────────────────────────────────────────────────────
@@ -195,7 +204,6 @@ async def upload(request: Request, file: UploadFile = File(...)) -> dict:
     job = _Job(id=str(uuid.uuid4())[:8], filename=file.filename or "upload.pdf")
     _jobs[job.id] = job
 
-    # Register as "running" in DB immediately so it shows in history
     db.upsert_extraction(
         job_id=job.id, filename=job.filename,
         status="running", error="", company_id=None,
@@ -216,13 +224,12 @@ async def stream(job_id: str, request: Request) -> StreamingResponse:
         raise HTTPException(status_code=401, detail="Not authenticated")
     job = _jobs.get(job_id)
     if not job:
-        raise HTTPException(404, "Job not found.")
+        raise HTTPException(404, "Job not found — it may have been interrupted by a server restart.")
 
     async def _generate():
         loop = asyncio.get_running_loop()
 
-        # If the job already finished (client reconnected after a drop),
-        # drain any remaining queued messages then synthesise the terminal event.
+        # Job already finished before client connected/reconnected — send result immediately.
         if job.status in ("done", "failed"):
             while True:
                 try:
@@ -232,17 +239,17 @@ async def stream(job_id: str, request: Request) -> StreamingResponse:
                         return
                 except queue.Empty:
                     break
-            # Queue was already drained — reconstruct the terminal message.
             if job.status == "done" and job.result:
                 yield f"data: {json.dumps({'type': 'done', 'result': job.result}, ensure_ascii=False)}\n\n"
             else:
                 yield f"data: {json.dumps({'type': 'error', 'msg': job.error or 'Extraction failed'}, ensure_ascii=False)}\n\n"
             return
 
+        # Ping every 3 seconds to keep Render's proxy from dropping the connection.
         while True:
             try:
                 msg = await loop.run_in_executor(
-                    None, lambda: job.messages.get(timeout=10)
+                    None, lambda: job.messages.get(timeout=3)
                 )
                 yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
                 if msg["type"] in ("done", "error"):
@@ -264,11 +271,8 @@ async def stream(job_id: str, request: Request) -> StreamingResponse:
 @app.get("/history")
 def history(request: Request) -> list:
     _guard(request)
-    # DB records (persistent, all sessions)
     db_rows = {r["id"]: r for r in db.fetch_history()}
 
-    # Merge in-memory jobs (covers current session, including running ones
-    # not yet flushed to DB, or when DB is not configured)
     for job in sorted(_jobs.values(), key=lambda j: j.created_at, reverse=True):
         if job.id not in db_rows:
             db_rows[job.id] = {
@@ -295,7 +299,6 @@ def history(request: Request) -> list:
 def download(job_id: str, request: Request) -> Response:
     _guard(request)
 
-    # Try in-memory file first (same session, file still on disk)
     job = _jobs.get(job_id)
     if job and job.xlsx_path:
         path = Path(job.xlsx_path)
@@ -306,7 +309,6 @@ def download(job_id: str, request: Request) -> Response:
                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
 
-    # Fall back to DB blob
     xlsx_bytes = db.fetch_xlsx(job_id)
     if xlsx_bytes:
         filename = f"{job_id}__data.xlsx"

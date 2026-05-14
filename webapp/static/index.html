@@ -643,8 +643,50 @@
       };
 
       let _reconnectAttempts = 0;
-      es.onerror = () => {
+
+      async function _checkHistoryForResult() {
+        try {
+          const res  = await fetch('/history');
+          const jobs = await res.json();
+          const job  = jobs.find(j => j.id === jobId);
+          if (job && job.status === 'done') {
+            addLog('Extraction found in history — done.', 'INFO');
+            doneStep('s-done');
+            document.getElementById('rRows').textContent   = (job.rows_count || 0).toLocaleString();
+            document.getElementById('rCost').textContent   = '$' + (job.cost_usd || 0).toFixed(4);
+            document.getElementById('rTokIn').textContent  = fmtK(job.tokens_in);
+            document.getElementById('rTokOut').textContent = fmtK(job.tokens_out);
+            if ((job.rows_count || 0) === 0) {
+              resultCard.classList.add('zero-rows');
+              document.getElementById('resultTitle').textContent = '⚠ Extraction complete — no financial data found';
+              document.getElementById('resultTitle').style.color = '#975a16';
+            }
+            warnRow.style.display = 'none';
+            resultCard.style.display = 'block';
+            if (job.rows_count > 0) { downloadBtn.href = '/download/' + jobId; downloadBtn.style.display = 'block'; }
+            extractBtn.disabled = false;
+            extractBtn.textContent = 'Extract Another PDF';
+            loadHistory();
+            return true;
+          }
+          if (job && job.status === 'failed') {
+            addLog('Extraction failed: ' + (job.error || 'Unknown error'), 'ERROR');
+            errorCard.textContent   = job.error || 'Extraction failed';
+            errorCard.style.display = 'block';
+            extractBtn.disabled     = false;
+            loadHistory();
+            return true;
+          }
+        } catch (_) {}
+        return false;
+      }
+
+      es.onerror = async () => {
         es.close();
+        // First check if the job already finished (server restart scenario)
+        const found = await _checkHistoryForResult();
+        if (found) return;
+
         if (_reconnectAttempts >= 5) {
           addLog('Connection lost after multiple retries. Check Extraction History for the result.', 'ERROR');
           extractBtn.disabled = false;
@@ -658,8 +700,6 @@
           const es2 = new EventSource('/stream/' + jobId);
           es2.onmessage = es.onmessage;
           es2.onerror   = es.onerror;
-          // Replace original reference so recursive retries work
-          Object.assign(es, es2);
         }, delay * 1000);
       };
     });
