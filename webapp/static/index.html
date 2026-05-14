@@ -642,10 +642,25 @@
         }
       };
 
+      let _reconnectAttempts = 0;
       es.onerror = () => {
         es.close();
-        addLog('Connection lost.', 'ERROR');
-        extractBtn.disabled = false;
+        if (_reconnectAttempts >= 5) {
+          addLog('Connection lost after multiple retries. Check Extraction History for the result.', 'ERROR');
+          extractBtn.disabled = false;
+          loadHistory();
+          return;
+        }
+        _reconnectAttempts++;
+        const delay = _reconnectAttempts * 4;
+        addLog(`Connection interrupted — reconnecting in ${delay}s (attempt ${_reconnectAttempts}/5)…`, 'WARNING');
+        setTimeout(() => {
+          const es2 = new EventSource('/stream/' + jobId);
+          es2.onmessage = es.onmessage;
+          es2.onerror   = es.onerror;
+          // Replace original reference so recursive retries work
+          Object.assign(es, es2);
+        }, delay * 1000);
       };
     });
 

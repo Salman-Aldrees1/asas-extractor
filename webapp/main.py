@@ -220,10 +220,29 @@ async def stream(job_id: str, request: Request) -> StreamingResponse:
 
     async def _generate():
         loop = asyncio.get_running_loop()
+
+        # If the job already finished (client reconnected after a drop),
+        # drain any remaining queued messages then synthesise the terminal event.
+        if job.status in ("done", "failed"):
+            while True:
+                try:
+                    msg = job.messages.get_nowait()
+                    yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
+                    if msg["type"] in ("done", "error"):
+                        return
+                except queue.Empty:
+                    break
+            # Queue was already drained — reconstruct the terminal message.
+            if job.status == "done" and job.result:
+                yield f"data: {json.dumps({'type': 'done', 'result': job.result}, ensure_ascii=False)}\n\n"
+            else:
+                yield f"data: {json.dumps({'type': 'error', 'msg': job.error or 'Extraction failed'}, ensure_ascii=False)}\n\n"
+            return
+
         while True:
             try:
                 msg = await loop.run_in_executor(
-                    None, lambda: job.messages.get(timeout=30)
+                    None, lambda: job.messages.get(timeout=10)
                 )
                 yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
                 if msg["type"] in ("done", "error"):
