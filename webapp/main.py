@@ -98,24 +98,43 @@ def _run_extraction(job: _Job, pdf_path: Path) -> None:
     try:
         job.status = "running"
         result = extract_pdf(pdf_path, output_dir)
-        job.result   = result
+
+        # Pull master_rows out before sending over SSE (too large for JSON stream)
+        master_rows = result.pop("master_rows", [])
+
+        job.result    = result
         job.xlsx_path = result["xlsx"]
-        job.company  = result.get("company", "")
-        job.period   = f"{result.get('period_current', '')} / {result.get('period_prior', '')}".strip(" /")
-        job.status   = "done"
+        job.company   = result.get("company", "")
+        job.period    = f"{result.get('period_current', '')} / {result.get('period_prior', '')}".strip(" /")
+        job.status    = "done"
+
+        # Resolve company ID (create if first time)
+        company_id = db.get_or_create_company(job.company)
+
         db.upsert_extraction(
             job_id=job.id, filename=job.filename,
+            company_id=company_id,
             company=job.company, period=job.period,
             status="done", error="",
             result=result, xlsx_path=job.xlsx_path,
         )
+
+        # Persist financial data rows into the fact table
+        db.save_financial_values(
+            company_id=company_id or "",
+            extraction_id=job.id,
+            fiscal_year_current=db._parse_year(result.get("period_current", "")),
+            fiscal_year_prior=db._parse_year(result.get("period_prior", "")),
+            master_rows=master_rows,
+        )
+
         job.messages.put({"type": "done", "result": result})
     except Exception as exc:
         job.status = "failed"
         job.error  = str(exc)
         db.upsert_extraction(
             job_id=job.id, filename=job.filename,
-            status="failed", error=str(exc),
+            status="failed", error=str(exc), company_id=None,
         )
         job.messages.put({"type": "error", "msg": str(exc)})
     finally:
@@ -179,7 +198,7 @@ async def upload(request: Request, file: UploadFile = File(...)) -> dict:
     # Register as "running" in DB immediately so it shows in history
     db.upsert_extraction(
         job_id=job.id, filename=job.filename,
-        status="running", error="",
+        status="running", error="", company_id=None,
     )
 
     threading.Thread(

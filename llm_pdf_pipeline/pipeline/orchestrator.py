@@ -190,6 +190,8 @@ def extract_pdf(pdf_path: Path | str, output_dir: Path | str) -> dict:
         "period_current": primary.period_current_label or "Current",
         "period_prior": primary.period_prior_label or "Prior",
         "rows": len(rows),
+        # Full row dicts for DB persistence — popped in main.py before SSE send
+        "master_rows": [r.model_dump() for r in rows],
         "sanity_warnings": len(warnings),
         "sanity_warning_details": warnings,
         "unmapped_rows": len(final_unmapped),
