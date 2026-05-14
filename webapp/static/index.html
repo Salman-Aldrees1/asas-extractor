@@ -184,8 +184,43 @@
       font-size: 11px;
       font-weight: 600;
     }
-    .warn-pill.yellow { background: #fffff0; color: #975a16; border: 1px solid #f6e05e; }
+    .warn-pill.yellow { background: #fffff0; color: #975a16; border: 1px solid #f6e05e; cursor: pointer; }
     .warn-pill.green  { background: #f0fff4; color: #276749; border: 1px solid #9ae6b4; }
+    .warn-pill.yellow:hover { background: #fefcbf; }
+
+    /* ── Detail drawer ────────────────────────────────────────────────────── */
+    .detail-drawer {
+      display: none;
+      margin-top: 10px;
+      padding: 12px 14px;
+      background: #fffbeb;
+      border: 1px solid #f6e05e;
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #744210;
+    }
+    .detail-drawer.open { display: block; }
+    .detail-section-title {
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #975a16;
+      margin-bottom: 6px;
+      margin-top: 10px;
+    }
+    .detail-section-title:first-child { margin-top: 0; }
+    .detail-item {
+      padding: 6px 8px;
+      background: #fff;
+      border: 1px solid #fbd38d;
+      border-radius: 6px;
+      margin-bottom: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      word-break: break-all;
+    }
 
     /* ── Download button ──────────────────────────────────────────────────── */
     .btn-download {
@@ -221,6 +256,72 @@
 
     /* ── Progress section visibility ──────────────────────────────────────── */
     .progress-section { display: none; }
+
+    /* ── History panel ────────────────────────────────────────────────────── */
+    .history-card {
+      width: 100%;
+      max-width: 640px;
+      margin-top: 20px;
+    }
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .history-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .history-empty {
+      font-size: 13px;
+      color: #a0aec0;
+      text-align: center;
+      padding: 18px 0;
+    }
+    .history-row {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.06);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 4px 12px;
+      align-items: start;
+    }
+    .history-row:last-child { margin-bottom: 0; }
+    .h-company { font-size: 14px; font-weight: 700; color: #1a202c; }
+    .h-meta    { font-size: 12px; color: #718096; margin-top: 2px; }
+    .h-error   { font-size: 12px; color: #c53030; margin-top: 4px; word-break: break-word; }
+    .h-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .h-badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .h-badge.done    { background: #c6f6d5; color: #276749; }
+    .h-badge.running { background: #bee3f8; color: #2b6cb0; }
+    .h-badge.failed  { background: #fed7d7; color: #c53030; }
+    .h-badge.pending { background: #edf2f7; color: #718096; }
+    .h-download {
+      font-size: 11px;
+      font-weight: 700;
+      color: #276749;
+      text-decoration: none;
+      padding: 3px 9px;
+      border: 1px solid #9ae6b4;
+      border-radius: 6px;
+      background: #f0fff4;
+      white-space: nowrap;
+    }
+    .h-download:hover { background: #c6f6d5; }
+    .h-stats { font-size: 11px; color: #a0aec0; }
   </style>
 </head>
 <body>
@@ -294,12 +395,21 @@
           </div>
         </div>
         <div class="warn-row" id="warnRow"></div>
+        <div class="detail-drawer" id="detailDrawer"></div>
       </div>
 
       <a class="btn-download" id="downloadBtn">⬇&nbsp; Download Excel Workbook</a>
 
       <div class="error-card" id="errorCard"></div>
     </div>
+  </div>
+
+  <!-- History panel -->
+  <div class="history-card" id="historyCard">
+    <div class="history-header">
+      <div class="history-title">Extraction History</div>
+    </div>
+    <div id="historyList"><div class="history-empty">No extractions yet this session.</div></div>
   </div>
 
   <script>
@@ -444,13 +554,49 @@
           document.getElementById('rTokOut').textContent = fmtK(r.tokens_out);
 
           // Sanity / unmapped pills
-          const pills = [];
-          if (r.sanity_warnings === 0) pills.push({ cls: 'green',  text: '✓ 0 sanity warnings' });
-          else                          pills.push({ cls: 'yellow', text: '⚠ ' + r.sanity_warnings + ' sanity warning' + (r.sanity_warnings > 1 ? 's' : '') });
-          if (r.unmapped_rows === 0)   pills.push({ cls: 'green',  text: '✓ 0 unmapped rows' });
-          else                          pills.push({ cls: 'yellow', text: '⚠ ' + r.unmapped_rows + ' unmapped row' + (r.unmapped_rows > 1 ? 's' : '') });
+          const detailDrawer = document.getElementById('detailDrawer');
+          detailDrawer.classList.remove('open');
+          detailDrawer.innerHTML = '';
 
-          warnRow.innerHTML = pills.map(p => `<span class="warn-pill ${p.cls}">${p.text}</span>`).join('');
+          warnRow.innerHTML = '';
+
+          function makePill(cls, text, onClickContent) {
+            const span = document.createElement('span');
+            span.className = 'warn-pill ' + cls;
+            span.textContent = text;
+            if (onClickContent) {
+              span.addEventListener('click', () => {
+                const isOpen = detailDrawer.classList.contains('open') && detailDrawer.dataset.source === text;
+                detailDrawer.classList.remove('open');
+                if (!isOpen) {
+                  detailDrawer.innerHTML = onClickContent;
+                  detailDrawer.dataset.source = text;
+                  detailDrawer.classList.add('open');
+                }
+              });
+            }
+            warnRow.appendChild(span);
+          }
+
+          if (r.sanity_warnings === 0) {
+            makePill('green', '✓ 0 sanity warnings', null);
+          } else {
+            const warnDetails = (r.sanity_warning_details || []).map(w => {
+              const lines = Object.entries(w).map(([k, v]) => `${k}: ${typeof v === 'number' ? v.toLocaleString(undefined, {maximumFractionDigits: 2}) : v}`).join('  |  ');
+              return `<div class="detail-item">${lines}</div>`;
+            }).join('');
+            makePill('yellow', '⚠ ' + r.sanity_warnings + ' sanity warning' + (r.sanity_warnings > 1 ? 's' : '') + ' — click to expand', '<div class="detail-section-title">Sanity Warnings</div>' + warnDetails);
+          }
+
+          if (r.unmapped_rows === 0) {
+            makePill('green', '✓ 0 unmapped rows', null);
+          } else {
+            const unmappedDetails = (r.unmapped_row_details || []).map(u => {
+              return `<div class="detail-item"><b>${u.line_item}</b>  ·  ${u.parent_statement || ''}${u.note_number ? ' / Note ' + u.note_number : ''}${u.note_section ? ' / ' + u.note_section : ''}</div>`;
+            }).join('');
+            makePill('yellow', '⚠ ' + r.unmapped_rows + ' unmapped row' + (r.unmapped_rows > 1 ? 's' : '') + ' — click to expand', '<div class="detail-section-title">Unmapped Rows</div>' + unmappedDetails);
+          }
+
           warnRow.style.display = 'flex';
 
           resultCard.style.display  = 'block';
@@ -458,6 +604,7 @@
           downloadBtn.style.display = 'block';
           extractBtn.disabled       = false;
           extractBtn.textContent    = 'Extract Another PDF';
+          loadHistory();
         }
 
         if (msg.type === 'error') {
@@ -466,6 +613,7 @@
           errorCard.textContent   = msg.msg;
           errorCard.style.display = 'block';
           extractBtn.disabled     = false;
+          loadHistory();
         }
       };
 
@@ -483,6 +631,49 @@
       if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'k';
       return String(n);
     }
+
+    // ── History ────────────────────────────────────────────────────────────────
+    async function loadHistory() {
+      try {
+        const res = await fetch('/history');
+        if (!res.ok) return;
+        const jobs = await res.json();
+        renderHistory(jobs);
+      } catch (_) {}
+    }
+
+    function renderHistory(jobs) {
+      const list = document.getElementById('historyList');
+      if (!jobs.length) {
+        list.innerHTML = '<div class="history-empty">No extractions yet this session.</div>';
+        return;
+      }
+      list.innerHTML = jobs.map(j => {
+        const company   = j.company || j.filename || 'Unknown';
+        const period    = j.period  || '—';
+        const badgeCls  = j.status === 'done' ? 'done' : j.status === 'failed' ? 'failed' : j.status === 'running' ? 'running' : 'pending';
+        const badgeTxt  = j.status === 'done' ? '✓ Done' : j.status === 'failed' ? '✗ Failed' : j.status === 'running' ? '⏳ Running' : 'Pending';
+        const stats     = j.status === 'done' ? `${(j.rows||0).toLocaleString()} rows &nbsp;·&nbsp; $${(j.cost_usd||0).toFixed(4)}` : '';
+        const dlBtn     = j.status === 'done' ? `<a class="h-download" href="/download/${j.job_id}">⬇ Download</a>` : '';
+        const errLine   = j.error  ? `<div class="h-error">⚠ ${j.error}</div>` : '';
+        return `
+          <div class="history-row">
+            <div>
+              <div class="h-company">${company}</div>
+              <div class="h-meta">${period} &nbsp;·&nbsp; ${j.created_at} &nbsp;·&nbsp; ${j.filename}</div>
+              ${errLine}
+            </div>
+            <div class="h-actions">
+              <span class="h-badge ${badgeCls}">${badgeTxt}</span>
+              ${stats ? `<span class="h-stats">${stats}</span>` : ''}
+              ${dlBtn}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // Load on page open
+    loadHistory();
   </script>
 </body>
 </html>

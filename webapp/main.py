@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import datetime
 import json
 import logging
 import queue
@@ -33,10 +34,15 @@ _OUTPUTS.mkdir(parents=True, exist_ok=True)
 @dataclass
 class _Job:
     id: str
+    filename: str = ""
     status: str = "pending"          # pending | running | done | failed
     messages: queue.Queue = field(default_factory=queue.Queue)
     result: Optional[dict] = None
     xlsx_path: Optional[str] = None
+    company: str = ""
+    period: str = ""
+    error: str = ""
+    created_at: str = field(default_factory=lambda: datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"))
 
 _jobs: dict[str, _Job] = {}
 
@@ -71,10 +77,13 @@ def _run_extraction(job: _Job, pdf_path: Path) -> None:
         result = extract_pdf(pdf_path, output_dir)
         job.result = result
         job.xlsx_path = result["xlsx"]
+        job.company = result.get("company", "")
+        job.period = f"{result.get('period_current', '')} / {result.get('period_prior', '')}".strip(" /")
         job.status = "done"
         job.messages.put({"type": "done", "result": result})
     except Exception as exc:
         job.status = "failed"
+        job.error = str(exc)
         job.messages.put({"type": "error", "msg": str(exc)})
     finally:
         pipeline_log.removeHandler(handler)
@@ -104,7 +113,7 @@ async def upload(file: UploadFile = File(...)) -> dict:
     tmp.write(data)
     tmp.close()
 
-    job = _Job(id=str(uuid.uuid4())[:8])
+    job = _Job(id=str(uuid.uuid4())[:8], filename=file.filename or "upload.pdf")
     _jobs[job.id] = job
 
     threading.Thread(
@@ -144,6 +153,25 @@ async def stream(job_id: str) -> StreamingResponse:
             "Connection": "keep-alive",
         },
     )
+
+
+@app.get("/history")
+def history() -> list:
+    jobs = sorted(_jobs.values(), key=lambda j: j.created_at, reverse=True)
+    return [
+        {
+            "job_id": j.id,
+            "filename": j.filename,
+            "company": j.company,
+            "period": j.period,
+            "status": j.status,
+            "error": j.error,
+            "rows": j.result.get("rows") if j.result else None,
+            "cost_usd": j.result.get("cost_usd") if j.result else None,
+            "created_at": j.created_at,
+        }
+        for j in jobs
+    ]
 
 
 @app.get("/download/{job_id}")
