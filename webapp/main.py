@@ -14,19 +14,41 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse, Response
+from starlette.middleware.sessions import SessionMiddleware
 
 # Load .env before importing the pipeline so ANTHROPIC_API_KEY is available.
 load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=True)
 
 from llm_pdf_pipeline.pipeline.orchestrator import extract_pdf  # noqa: E402
+from webapp import auth, db  # noqa: E402
+
+import os
+_SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-only-secret-change-me-in-prod")
 
 app = FastAPI(title="Asas Financial Extractor")
+app.add_middleware(SessionMiddleware, secret_key=_SESSION_SECRET, max_age=60 * 60 * 24 * 30)
 
-_STATIC = Path(__file__).resolve().parent / "static"
+_STATIC  = Path(__file__).resolve().parent / "static"
 _OUTPUTS = Path(tempfile.gettempdir()) / "asas_outputs"
 _OUTPUTS.mkdir(parents=True, exist_ok=True)
+
+
+@app.on_event("startup")
+def _startup() -> None:
+    db.init_db()
+
+
+# ── Auth helpers ───────────────────────────────────────────────────────────────
+
+def _logged_in(request: Request) -> bool:
+    return bool(request.session.get("user"))
+
+def _guard(request: Request) -> None:
+    """Raise 401 for API routes when not logged in."""
+    if not _logged_in(request):
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
 
 # ── In-memory job store ────────────────────────────────────────────────────────
@@ -42,7 +64,9 @@ class _Job:
     company: str = ""
     period: str = ""
     error: str = ""
-    created_at: str = field(default_factory=lambda: datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"))
+    created_at: str = field(
+        default_factory=lambda: datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    )
 
 _jobs: dict[str, _Job] = {}
 
@@ -50,7 +74,6 @@ _jobs: dict[str, _Job] = {}
 # ── Logging bridge ─────────────────────────────────────────────────────────────
 
 class _JobLogHandler(logging.Handler):
-    """Forwards pipeline log records into the job's message queue."""
     def __init__(self, job: _Job) -> None:
         super().__init__()
         self._job = job
@@ -75,15 +98,25 @@ def _run_extraction(job: _Job, pdf_path: Path) -> None:
     try:
         job.status = "running"
         result = extract_pdf(pdf_path, output_dir)
-        job.result = result
+        job.result   = result
         job.xlsx_path = result["xlsx"]
-        job.company = result.get("company", "")
-        job.period = f"{result.get('period_current', '')} / {result.get('period_prior', '')}".strip(" /")
-        job.status = "done"
+        job.company  = result.get("company", "")
+        job.period   = f"{result.get('period_current', '')} / {result.get('period_prior', '')}".strip(" /")
+        job.status   = "done"
+        db.upsert_extraction(
+            job_id=job.id, filename=job.filename,
+            company=job.company, period=job.period,
+            status="done", error="",
+            result=result, xlsx_path=job.xlsx_path,
+        )
         job.messages.put({"type": "done", "result": result})
     except Exception as exc:
         job.status = "failed"
-        job.error = str(exc)
+        job.error  = str(exc)
+        db.upsert_extraction(
+            job_id=job.id, filename=job.filename,
+            status="failed", error=str(exc),
+        )
         job.messages.put({"type": "error", "msg": str(exc)})
     finally:
         pipeline_log.removeHandler(handler)
@@ -93,15 +126,42 @@ def _run_extraction(job: _Job, pdf_path: Path) -> None:
             pass
 
 
-# ── Routes ─────────────────────────────────────────────────────────────────────
+# ── Auth routes ────────────────────────────────────────────────────────────────
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page() -> HTMLResponse:
+    return HTMLResponse((_STATIC / "login.html").read_text(encoding="utf-8"))
+
+
+@app.post("/login")
+async def login(request: Request) -> Response:
+    form = await request.form()
+    username = str(form.get("username", ""))
+    password = str(form.get("password", ""))
+    if auth.check_credentials(username, password):
+        request.session["user"] = username
+        return RedirectResponse(url="/", status_code=302)
+    return RedirectResponse(url="/login?error=1", status_code=302)
+
+
+@app.get("/logout")
+def logout(request: Request) -> RedirectResponse:
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=302)
+
+
+# ── Main routes ────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
-def index() -> HTMLResponse:
+def index(request: Request) -> Response:
+    if not _logged_in(request):
+        return RedirectResponse("/login", status_code=302)
     return HTMLResponse((_STATIC / "index.html").read_text(encoding="utf-8"))
 
 
 @app.post("/upload")
-async def upload(file: UploadFile = File(...)) -> dict:
+async def upload(request: Request, file: UploadFile = File(...)) -> dict:
+    _guard(request)
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(400, "Only PDF files are accepted.")
 
@@ -116,6 +176,12 @@ async def upload(file: UploadFile = File(...)) -> dict:
     job = _Job(id=str(uuid.uuid4())[:8], filename=file.filename or "upload.pdf")
     _jobs[job.id] = job
 
+    # Register as "running" in DB immediately so it shows in history
+    db.upsert_extraction(
+        job_id=job.id, filename=job.filename,
+        status="running", error="",
+    )
+
     threading.Thread(
         target=_run_extraction,
         args=(job, Path(tmp.name)),
@@ -126,7 +192,9 @@ async def upload(file: UploadFile = File(...)) -> dict:
 
 
 @app.get("/stream/{job_id}")
-async def stream(job_id: str) -> StreamingResponse:
+async def stream(job_id: str, request: Request) -> StreamingResponse:
+    if not _logged_in(request):
+        raise HTTPException(status_code=401, detail="Not authenticated")
     job = _jobs.get(job_id)
     if not job:
         raise HTTPException(404, "Job not found.")
@@ -156,34 +224,60 @@ async def stream(job_id: str) -> StreamingResponse:
 
 
 @app.get("/history")
-def history() -> list:
-    jobs = sorted(_jobs.values(), key=lambda j: j.created_at, reverse=True)
-    return [
-        {
-            "job_id": j.id,
-            "filename": j.filename,
-            "company": j.company,
-            "period": j.period,
-            "status": j.status,
-            "error": j.error,
-            "rows": j.result.get("rows") if j.result else None,
-            "cost_usd": j.result.get("cost_usd") if j.result else None,
-            "created_at": j.created_at,
-        }
-        for j in jobs
-    ]
+def history(request: Request) -> list:
+    _guard(request)
+    # DB records (persistent, all sessions)
+    db_rows = {r["id"]: r for r in db.fetch_history()}
+
+    # Merge in-memory jobs (covers current session, including running ones
+    # not yet flushed to DB, or when DB is not configured)
+    for job in sorted(_jobs.values(), key=lambda j: j.created_at, reverse=True):
+        if job.id not in db_rows:
+            db_rows[job.id] = {
+                "id": job.id,
+                "filename": job.filename,
+                "company": job.company,
+                "period": job.period,
+                "status": job.status,
+                "error": job.error,
+                "rows_count": job.result.get("rows") if job.result else None,
+                "cost_usd": job.result.get("cost_usd") if job.result else None,
+                "tokens_in": job.result.get("tokens_in") if job.result else None,
+                "tokens_out": job.result.get("tokens_out") if job.result else None,
+                "sanity_warn": job.result.get("sanity_warnings") if job.result else None,
+                "unmapped": job.result.get("unmapped_rows") if job.result else None,
+                "created_at": job.created_at,
+                "has_xlsx": job.xlsx_path is not None,
+            }
+
+    return sorted(db_rows.values(), key=lambda r: r.get("created_at", ""), reverse=True)
 
 
 @app.get("/download/{job_id}")
-def download(job_id: str) -> FileResponse:
+def download(job_id: str, request: Request) -> Response:
+    _guard(request)
+
+    # Try in-memory file first (same session, file still on disk)
     job = _jobs.get(job_id)
-    if not job or not job.xlsx_path:
-        raise HTTPException(404, "Result not ready.")
-    path = Path(job.xlsx_path)
-    if not path.exists():
-        raise HTTPException(404, "File no longer available.")
-    return FileResponse(
-        path=str(path),
-        filename=path.name,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    if job and job.xlsx_path:
+        path = Path(job.xlsx_path)
+        if path.exists():
+            return FileResponse(
+                path=str(path),
+                filename=path.name,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+    # Fall back to DB blob
+    xlsx_bytes = db.fetch_xlsx(job_id)
+    if xlsx_bytes:
+        filename = f"{job_id}__data.xlsx"
+        if job and job.filename:
+            filename = Path(job.filename).stem + "__data.xlsx"
+        return Response(
+            content=xlsx_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    raise HTTPException(404, "File not available.")
