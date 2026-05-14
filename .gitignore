@@ -1,0 +1,29 @@
+# secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# os
+.DS_Store
+Thumbs.db
+
+# Extraction outputs (generated at runtime — don't commit)
+llm_pdf_pipeline/outputs/
+llm_pdf_pipeline/outputs2/
+output/
+data/raw/
+data/processed/
+
+# Large sample files
+*.xlsx
+
+# Editor
+.vscode/
+.idea/

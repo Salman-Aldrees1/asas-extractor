@@ -1,0 +1,6 @@
+anthropic>=0.39.0
+pdfplumber>=0.11.0
+pydantic>=2.9
+pyyaml>=6.0
+python-dotenv>=1.0
+openpyxl>=3.1

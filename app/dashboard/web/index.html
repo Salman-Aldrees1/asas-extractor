@@ -1,0 +1,1939 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asas Financials Dashboard</title>
+    <link rel="icon" type="image/png" href="/assets/logo-dark.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --gf-navy: #14365d;
+        --gf-navy-2: #0f2a49;
+        --gf-bg: #f3f6fa;
+        --gf-card: #ffffff;
+        --gf-line: #e2e9f2;
+        --gf-text: #1b2b40;
+        --gf-muted: #6d7d93;
+        --gf-accent: #f59e0b;
+        --gf-green: #1f8f5f;
+        --gf-red: #bf3e3e;
+        --gf-success-bg: #ecf8f1;
+        --gf-success-text: #1e7b53;
+        --gf-pending-bg: #fff5e8;
+        --gf-pending-text: #9c5d12;
+        --gf-failed-bg: #fdeeee;
+        --gf-failed-text: #9f2f38;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--gf-bg);
+        color: var(--gf-text);
+        font-family: "Roboto", "Segoe UI", sans-serif;
+        overflow-x: auto;
+        overflow-y: visible;
+        pointer-events: auto;
+      }
+
+      .topbar {
+        background: linear-gradient(90deg, var(--gf-navy-2), var(--gf-navy));
+        color: #fff;
+        border-bottom: 3px solid #0b1f35;
+      }
+
+      .topbar-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-logo {
+        width: auto;
+        height: 40px;
+        display: block;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 17px;
+        letter-spacing: 0.01em;
+      }
+
+      .brand small {
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 12px;
+      }
+
+      .topbar-actions {
+        margin-left: auto;
+      }
+
+      .topbar-btn {
+        border-radius: 4px;
+        border: 1px solid #8ca6c2;
+        height: 30px;
+        padding: 0 11px;
+        font-size: 12px;
+        background: #f0f4f9;
+        color: #1b2b40;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .sidebar button,
+      .sidebar input,
+      .sidebar select {
+        border-radius: 4px;
+        border: 1px solid #355578;
+        height: 30px;
+        padding: 0 9px;
+        font-size: 12px;
+      }
+
+      .sidebar button {
+        background: var(--gf-accent);
+        border-color: #da8a04;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .market-strip {
+        background: #fff;
+        border-bottom: 1px solid var(--gf-line);
+      }
+
+      .market-strip-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 8px 16px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        color: var(--gf-muted);
+        font-size: 12px;
+      }
+
+      .market-strip .value {
+        color: var(--gf-text);
+        font-weight: 700;
+      }
+
+      .market-strip .up {
+        color: var(--gf-green);
+      }
+
+      .page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 14px 16px 22px;
+        display: grid;
+        grid-template-columns: 290px minmax(0, 1fr);
+        gap: 14px;
+      }
+
+      .card {
+        background: var(--gf-card);
+        border: 1px solid var(--gf-line);
+        border-radius: 6px;
+      }
+
+      .card-head {
+        border-bottom: 1px solid var(--gf-line);
+        padding: 9px 11px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #37597f;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .card-body {
+        padding: 11px;
+      }
+
+      .sidebar {
+        display: grid;
+        gap: 10px;
+        align-content: start;
+      }
+
+      .sidebar select,
+      .sidebar input {
+        width: 100%;
+        border: 1px solid #ccd9e8;
+        background: #fff;
+        color: var(--gf-text);
+      }
+
+      .field {
+        margin-bottom: 8px;
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 11px;
+        color: var(--gf-muted);
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      #status {
+        margin-top: 7px;
+        font-size: 12px;
+        color: var(--gf-muted);
+      }
+
+      #status.error {
+        color: var(--gf-red);
+      }
+
+      .meta-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .meta-table td {
+        padding: 6px 0;
+        border-bottom: 1px dashed #e5edf6;
+      }
+
+      .meta-table td:first-child {
+        color: var(--gf-muted);
+      }
+
+      .meta-table td:last-child {
+        text-align: right;
+        font-weight: 700;
+      }
+
+      .tabbar {
+        display: flex;
+        border-bottom: 2px solid var(--gf-line);
+        margin-bottom: 10px;
+        gap: 2px;
+        overflow-x: auto;
+      }
+
+      .tab-btn {
+        border: none;
+        background: transparent;
+        color: #506785;
+        padding: 9px 13px;
+        margin-bottom: -2px;
+        border-bottom: 2px solid transparent;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .tab-btn.active {
+        color: #224d7f;
+        border-color: #2a5f99;
+      }
+
+      .tab-pane {
+        display: none;
+      }
+
+      .tab-pane.active {
+        display: block;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .kpi {
+        border: 1px solid var(--gf-line);
+        border-radius: 6px;
+        background: #fff;
+      }
+
+      .kpi .kpi-label {
+        font-size: 11px;
+        color: var(--gf-muted);
+        padding: 7px 9px 2px;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .kpi .kpi-value {
+        font-size: 22px;
+        line-height: 1;
+        padding: 0 9px 9px;
+        font-weight: 700;
+      }
+
+      .kpi .kpi-value.green {
+        color: var(--gf-green);
+      }
+
+      .chart-grid {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 10px;
+      }
+
+      .chart-grid-secondary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .summary-head {
+        margin-bottom: 10px;
+      }
+
+      .summary-head h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .summary-head p {
+        margin: 4px 0 0;
+        color: var(--gf-muted);
+        font-size: 12px;
+      }
+
+      .panel-title {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .panel-subtitle {
+        margin: 4px 0 0;
+        color: var(--gf-muted);
+        font-size: 12px;
+      }
+
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .profile-item {
+        border: 1px solid var(--gf-line);
+        border-radius: 6px;
+        padding: 10px;
+      }
+
+      .profile-item h4 {
+        margin: 0;
+        font-size: 11px;
+        color: var(--gf-muted);
+        text-transform: uppercase;
+      }
+
+      .profile-item p {
+        margin: 5px 0 0;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .company-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+        gap: 10px;
+      }
+
+      .company-main,
+      .company-side {
+        display: grid;
+        gap: 10px;
+        align-content: start;
+      }
+
+      .company-hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .company-hero h3 {
+        margin: 0;
+        font-size: 22px;
+      }
+
+      .company-hero p {
+        margin: 4px 0 0;
+        color: var(--gf-muted);
+        font-size: 12px;
+      }
+
+      .company-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .tag {
+        border: 1px solid #d4e1ef;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        color: #395e87;
+        background: #f5f9ff;
+      }
+
+      .profile-grid-rich {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .company-metric-table td:last-child {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .delta-up {
+        color: var(--gf-green);
+      }
+
+      .delta-down {
+        color: var(--gf-red);
+      }
+
+      .delta-flat {
+        color: var(--gf-muted);
+      }
+
+      .source-breakdown {
+        margin-top: 9px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .source-pill {
+        border-radius: 999px;
+        border: 1px solid #dce7f3;
+        background: #f7faff;
+        color: #456689;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+      }
+
+      .signal-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .signal-card {
+        border: 1px solid #d9e6f4;
+        background: #f8fbff;
+        border-radius: 6px;
+        padding: 9px;
+      }
+
+      .signal-name {
+        color: var(--gf-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .signal-value {
+        margin-top: 5px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1f4f81;
+      }
+
+      #ratioTrendBody td,
+      #ratioTrendHead th {
+        text-align: right;
+      }
+
+      #ratioTrendBody td:first-child,
+      #ratioTrendHead th:first-child {
+        text-align: left;
+      }
+
+      #companyHighlightsBody td:nth-child(n + 2),
+      #companyHighlightsHead th:nth-child(n + 2) {
+        text-align: right;
+      }
+
+      .table-wrap {
+        overflow: auto;
+      }
+
+      .table-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .table-toolbar label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: var(--gf-muted);
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .table-toolbar select {
+        border-radius: 4px;
+        border: 1px solid #ccd9e8;
+        height: 30px;
+        padding: 0 9px;
+        font-size: 12px;
+        background: #fff;
+        color: var(--gf-text);
+      }
+
+      .table-toolbar-meta {
+        font-size: 11px;
+        color: var(--gf-muted);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--gf-line);
+        padding: 8px;
+      }
+
+      th {
+        background: #f8fbff;
+        color: #4c6586;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        text-align: left;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      td:last-child,
+      #statementBody td:nth-child(n + 3) {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .statement-badge {
+        color: #49688d;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: capitalize;
+      }
+
+      .status-pill {
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .status-pill.completed {
+        background: var(--gf-success-bg);
+        color: var(--gf-success-text);
+      }
+
+      .status-pill.uploaded,
+      .status-pill.pending,
+      .status-pill.running {
+        background: var(--gf-pending-bg);
+        color: var(--gf-pending-text);
+      }
+
+      .status-pill.failed {
+        background: var(--gf-failed-bg);
+        color: var(--gf-failed-text);
+      }
+
+      .jobs-card {
+        margin-top: 10px;
+      }
+
+      .ingestion-grid {
+        display: grid;
+        grid-template-columns: 320px minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      .upload-box {
+        display: grid;
+        gap: 8px;
+      }
+
+      .upload-box input,
+      .upload-box button {
+        width: 100%;
+      }
+
+      @media (max-width: 1080px) {
+        .page {
+          grid-template-columns: 1fr;
+        }
+
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .chart-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .chart-grid-secondary {
+          grid-template-columns: 1fr;
+        }
+
+        .company-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .profile-grid-rich {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .signal-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .ingestion-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .topbar-inner,
+        .market-strip-inner {
+          padding-left: 10px;
+          padding-right: 10px;
+        }
+
+        .page {
+          padding-left: 10px;
+          padding-right: 10px;
+        }
+
+        .kpi-grid,
+        .profile-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .profile-grid-rich {
+          grid-template-columns: 1fr;
+        }
+
+        .signal-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .tabbar {
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="/assets/logo-light.png" alt="Asas Financials" class="brand-logo" />
+          <div>
+            <h1>Asas Financials</h1>
+            <small>Company financial dashboard</small>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="topbar-btn" onclick="logout()">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="market-strip">
+      <div class="market-strip-inner">
+        <span>Coverage: <span id="coverageBadge" class="value">n/a</span></span>
+        <span>Data Quality: <span id="kpiQuality" class="value">n/a</span></span>
+        <span>Company: <span id="currentCompanyBadge" class="value">n/a</span></span>
+      </div>
+    </div>
+
+    <div class="page">
+      <aside class="sidebar">
+        <div class="card">
+          <div class="card-head">Workspace Controls</div>
+          <div class="card-body">
+            <div class="field">
+              <label>Company</label>
+              <select id="companySelect"></select>
+            </div>
+            <div style="font-size:12px;color:var(--gf-muted);line-height:1.45;">
+              Use tabs to navigate between overview, statements, and company profile.
+              <span id="ingestionHelpText" style="display:none;"> and ingestion pipeline.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">Snapshot</div>
+          <div class="card-body">
+            <table class="meta-table">
+              <tr><td>Company</td><td id="companyMeta">-</td></tr>
+              <tr><td>Ticker</td><td id="companyTicker">-</td></tr>
+              <tr><td>Sector</td><td id="companySector">-</td></tr>
+              <tr><td>Coverage</td><td id="companyCoverage">-</td></tr>
+            </table>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <div class="tabbar">
+          <button id="tabSummaryBtn" class="tab-btn active" onclick="setTab('summary')">Overview</button>
+          <button id="tabCompanyBtn" class="tab-btn" onclick="setTab('company')">Company Profile</button>
+          <button id="tabStatementsBtn" class="tab-btn" onclick="setTab('statements')">Financial Statements</button>
+          <button id="tabIngestionBtn" class="tab-btn" onclick="setTab('ingestion')">Ingestion Pipeline</button>
+        </div>
+
+        <div id="tabSummary" class="tab-pane active">
+          <div class="summary-head">
+            <h2 id="summaryCompanyName">-</h2>
+            <p id="summaryCompanyMeta">Financial overview</p>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kpi-label">Revenue (Latest)</div><div class="kpi-value" id="kpiRevenue">-</div></div>
+            <div class="kpi"><div class="kpi-label">Revenue (Base Year)</div><div class="kpi-value" id="kpiRevenueBase">-</div></div>
+            <div class="kpi"><div class="kpi-label">Net Profit</div><div class="kpi-value green" id="kpiNet">-</div></div>
+            <div class="kpi"><div class="kpi-label">Operating Profit</div><div class="kpi-value" id="kpiOp">-</div></div>
+            <div class="kpi"><div class="kpi-label">Current Ratio</div><div class="kpi-value" id="kpiCurrentRatio">-</div></div>
+            <div class="kpi"><div class="kpi-label">Debt / Equity</div><div class="kpi-value" id="kpiDebtToEquity">-</div></div>
+            <div class="kpi"><div class="kpi-label">Asset Turnover</div><div class="kpi-value" id="kpiAssetTurnover">-</div></div>
+            <div class="kpi"><div class="kpi-label">Quality Score</div><div class="kpi-value" id="kpiQualityInline">n/a</div></div>
+          </div>
+
+          <div class="chart-grid">
+            <div class="card">
+              <div class="card-head">Revenue vs Net Profit</div>
+              <div class="card-body">
+                <p class="panel-subtitle">Annual trend comparison</p>
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head">Cash Flow Mix</div>
+              <div class="card-body">
+                <p class="panel-subtitle">Latest year distribution</p>
+                <canvas id="cashChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-grid-secondary">
+            <div class="card">
+              <div class="card-head">Profitability Trend</div>
+              <div class="card-body">
+                <p class="panel-subtitle">Margins across years</p>
+                <canvas id="marginChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head">Balance Structure</div>
+              <div class="card-body">
+                <p class="panel-subtitle">Assets vs liabilities vs equity</p>
+                <canvas id="balanceChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head">Growth Momentum</div>
+              <div class="card-body">
+                <p class="panel-subtitle">YoY growth by metric</p>
+                <canvas id="growthChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tabCompany" class="tab-pane">
+          <div class="company-grid">
+            <div class="company-main">
+              <div class="card">
+                <div class="card-head">Company Snapshot</div>
+                <div class="card-body">
+                  <div class="company-hero">
+                    <div>
+                      <h3 id="companyHeroName">-</h3>
+                      <p id="companyHeroTicker">-</p>
+                    </div>
+                    <div class="company-tags">
+                      <span class="tag" id="companyHeroSector">-</span>
+                      <span class="tag" id="companyHeroCoverage">Coverage n/a</span>
+                      <span class="tag" id="companyHeroQuality">Quality n/a</span>
+                    </div>
+                  </div>
+                  <div class="profile-grid profile-grid-rich">
+                    <div class="profile-item"><h4>Revenue (Latest)</h4><p id="cmpRevenueLatest">-</p></div>
+                    <div class="profile-item"><h4>Net Profit (Latest)</h4><p id="cmpNetLatest">-</p></div>
+                    <div class="profile-item"><h4>Operating Margin</h4><p id="cmpOpMargin">-</p></div>
+                    <div class="profile-item"><h4>Net Margin</h4><p id="cmpNetMargin">-</p></div>
+                    <div class="profile-item"><h4>Revenue CAGR</h4><p id="cmpRevenueCagr">-</p></div>
+                    <div class="profile-item"><h4>Cash Conversion</h4><p id="cmpCashConversion">-</p></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">Financial Highlights (Last 4 Years)</div>
+                <div class="card-body table-wrap">
+                  <table>
+                    <thead id="companyHighlightsHead"></thead>
+                    <tbody id="companyHighlightsBody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">Focus Signals</div>
+                <div class="card-body">
+                  <div class="signal-grid">
+                    <div class="signal-card"><div class="signal-name">Financial Strength</div><div class="signal-value" id="signalStrength">-</div></div>
+                    <div class="signal-card"><div class="signal-name">Profitability</div><div class="signal-value" id="signalProfitability">-</div></div>
+                    <div class="signal-card"><div class="signal-name">Growth</div><div class="signal-value" id="signalGrowth">-</div></div>
+                    <div class="signal-card"><div class="signal-name">Cash Flow</div><div class="signal-value" id="signalCashflow">-</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">Margin & Cash Ratio Trend</div>
+                <div class="card-body table-wrap">
+                  <table>
+                    <thead id="ratioTrendHead"></thead>
+                    <tbody id="ratioTrendBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="company-side">
+              <div class="card">
+                <div class="card-head">Growth & Profitability</div>
+                <div class="card-body">
+                  <table class="meta-table company-metric-table">
+                    <tr><td>Revenue YoY</td><td id="yoyRevenue">-</td></tr>
+                    <tr><td>Net Profit YoY</td><td id="yoyNet">-</td></tr>
+                    <tr><td>Operating Profit YoY</td><td id="yoyOp">-</td></tr>
+                    <tr><td>Gross Profit YoY</td><td id="yoyGross">-</td></tr>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">Quality Lens</div>
+                <div class="card-body">
+                  <table class="meta-table company-metric-table">
+                    <tr><td>Gross Margin</td><td id="qlGrossMargin">-</td></tr>
+                    <tr><td>Operating Margin</td><td id="qlOpMargin">-</td></tr>
+                    <tr><td>Net Margin</td><td id="qlNetMargin">-</td></tr>
+                    <tr><td>OCF Margin</td><td id="qlOcfMargin">-</td></tr>
+                    <tr><td>FCF Proxy Margin</td><td id="qlFcfProxy">-</td></tr>
+                    <tr><td>Positive Net Years</td><td id="qlNetPositiveYears">-</td></tr>
+                    <tr><td>Positive OCF Years</td><td id="qlOcfPositiveYears">-</td></tr>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">Capital & Liquidity Ratios</div>
+                <div class="card-body">
+                  <table class="meta-table company-metric-table">
+                    <tr><td>Current Ratio</td><td id="capCurrentRatio">-</td></tr>
+                    <tr><td>Cash Ratio</td><td id="capCashRatio">-</td></tr>
+                    <tr><td>Debt to Equity</td><td id="capDebtToEquity">-</td></tr>
+                    <tr><td>Debt to Assets</td><td id="capDebtToAssets">-</td></tr>
+                    <tr><td>Equity to Assets</td><td id="capEquityToAssets">-</td></tr>
+                    <tr><td>Asset Turnover</td><td id="capAssetTurnover">-</td></tr>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">Derived Metrics (Reference Coverage)</div>
+                <div class="card-body">
+                  <p class="panel-subtitle" id="derivedMetricsMeta">Latest year: n/a</p>
+                  <table class="meta-table company-metric-table">
+                    <tbody id="derivedMetricsBody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">Data Provenance</div>
+                <div class="card-body">
+                  <table class="meta-table company-metric-table">
+                    <tr><td>Raw data points</td><td id="companyRawPoints">-</td></tr>
+                    <tr><td>Points after dedup</td><td id="companyDedupPoints">-</td></tr>
+                    <tr><td>Dropped duplicates</td><td id="companyDupes">-</td></tr>
+                  </table>
+                  <div id="companySourceBreakdown" class="source-breakdown"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tabStatements" class="tab-pane">
+          <div class="card">
+            <div class="card-head">Financial Statements (Annual)</div>
+            <div class="card-body table-wrap">
+              <div class="table-toolbar">
+                <label>
+                  Statement
+                  <select id="statementFilter" onchange="renderStatementsTable(lastCompanyView)">
+                    <option value="all">All statements</option>
+                  </select>
+                </label>
+                <div id="statementStats" class="table-toolbar-meta">0 metrics</div>
+              </div>
+              <table>
+                <thead id="statementHead"></thead>
+                <tbody id="statementBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="tabIngestion" class="tab-pane">
+          <div class="ingestion-grid">
+            <div class="card">
+              <div class="card-head">Upload & Run</div>
+              <div class="card-body upload-box">
+                <input id="pdfInput" type="file" accept="application/pdf" />
+                <button onclick="uploadPdf()">Run Ingestion</button>
+                <div id="status"></div>
+              </div>
+            </div>
+            <div class="card jobs-card" style="margin-top:0;">
+              <div class="card-head">Ingestion Jobs (Selected Company)</div>
+              <div class="card-body table-wrap">
+                <table>
+                  <thead><tr><th>ID</th><th>Company</th><th>File</th><th>Status</th><th>Message</th></tr></thead>
+                  <tbody id="jobsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      let token = localStorage.getItem("auth_token") || "";
+      let selectedCompanyId = null;
+      let lastCompanyView = null;
+      let currentUser = null;
+      let trendChart = null;
+      let cashChart = null;
+      let marginChart = null;
+      let balanceChart = null;
+      let growthChart = null;
+      let overviewRequestId = 0;
+
+      function redirectToLogin() {
+        window.location.href = "/login";
+      }
+
+      function logout() {
+        localStorage.removeItem("auth_token");
+        token = "";
+        currentUser = null;
+        redirectToLogin();
+      }
+
+      function setTab(tabName) {
+        const tabNames = currentUser && currentUser.role === "admin" 
+          ? ["summary", "company", "statements", "ingestion"]
+          : ["summary", "company", "statements"];
+        
+        tabNames.forEach(name => {
+          const pane = document.getElementById(`tab${name[0].toUpperCase() + name.slice(1)}`);
+          const btn = document.getElementById(`tab${name[0].toUpperCase() + name.slice(1)}Btn`);
+          if (pane && btn) {
+            pane.classList.toggle("active", name === tabName);
+            btn.classList.toggle("active", name === tabName);
+          }
+        });
+      }
+
+      function renderCompanyProfile(view, series, qualityText) {
+        const years = view.years || [];
+        const coverage = years.length ? `${Math.min(...years)}-${Math.max(...years)}` : "n/a";
+        const company = view.company || {};
+
+        const revenue = series["Revenue"] || [];
+        const gross = series["Gross Profit"] || [];
+        const net = series["Net Profit"] || [];
+        const op = series["Operating Profit"] || [];
+        const ocf = series["Operating Cash Flow"] || [];
+        const icf = series["Investing Cash Flow"] || [];
+        const fcf = series["Financing Cash Flow"] || [];
+        const currentAssets = getSeriesByAliases(series, ["Total Current Assets", "Current Assets"]);
+        const currentLiabilities = getSeriesByAliases(series, ["Total Current Liabilities", "Current Liabilities"]);
+        const cashAndEquivalents = getSeriesByAliases(series, ["Cash and Cash Equivalents", "Cash"]);
+        const totalDebt = getSeriesByAliases(series, ["Total Debt", "Total Liabilities"]);
+        const totalAssets = getSeriesByAliases(series, ["Total Assets"]);
+        const totalEquity = getSeriesByAliases(series, ["Total Equity", "Shareholders Equity"]);
+
+        const revenueLatest = latestPoint(revenue)?.value ?? null;
+        const grossLatest = latestPoint(gross)?.value ?? null;
+        const netLatest = latestPoint(net)?.value ?? null;
+        const opLatest = latestPoint(op)?.value ?? null;
+        const ocfLatest = latestPoint(ocf)?.value ?? null;
+        const icfLatest = latestPoint(icf)?.value ?? null;
+
+        document.getElementById("companyHeroName").innerText = company.name || "-";
+        document.getElementById("companyHeroTicker").innerText = company.ticker || "-";
+        document.getElementById("companyHeroSector").innerText = company.sector || "Unknown";
+        document.getElementById("companyHeroCoverage").innerText = `Coverage ${coverage}`;
+        document.getElementById("companyHeroQuality").innerText = `Quality ${qualityText}`;
+
+        document.getElementById("cmpRevenueLatest").innerText = revenueLatest == null ? "-" : fmt(revenueLatest);
+        document.getElementById("cmpNetLatest").innerText = netLatest == null ? "-" : fmt(netLatest);
+        document.getElementById("cmpOpMargin").innerText = fmtPct(ratioPercent(opLatest, revenueLatest));
+        document.getElementById("cmpNetMargin").innerText = fmtPct(ratioPercent(netLatest, revenueLatest));
+        document.getElementById("cmpRevenueCagr").innerText = fmtPct(calcCagr(revenue));
+        document.getElementById("cmpCashConversion").innerText = fmtPct(ratioPercent(ocfLatest, netLatest));
+
+        renderDeltaCell("yoyRevenue", calcYoY(revenue));
+        renderDeltaCell("yoyNet", calcYoY(net));
+        renderDeltaCell("yoyOp", calcYoY(op));
+        renderDeltaCell("yoyGross", calcYoY(gross));
+
+        const highlightsYears = years.slice(-4);
+        const metrics = [
+          "Revenue",
+          "Gross Profit",
+          "Operating Profit",
+          "Net Profit",
+          "Operating Cash Flow",
+          "Investing Cash Flow",
+          "Financing Cash Flow",
+        ];
+
+        const head = document.getElementById("companyHighlightsHead");
+        const body = document.getElementById("companyHighlightsBody");
+        head.innerHTML = `<tr><th>Metric</th>${highlightsYears.map(y => `<th>${y}</th>`).join("")}</tr>`;
+        body.innerHTML = "";
+
+        metrics.forEach(metric => {
+          const values = new Map((series[metric] || []).map(item => [item.year, item.value]));
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${metric}</td>${highlightsYears.map(y => `<td>${values.has(y) ? fmt(values.get(y)) : "-"}</td>`).join("")}`;
+          body.appendChild(tr);
+        });
+
+        const revenueByYear = new Map(revenue.map(item => [item.year, item.value]));
+        const grossByYear = new Map(gross.map(item => [item.year, item.value]));
+        const opByYear = new Map(op.map(item => [item.year, item.value]));
+        const netByYear = new Map(net.map(item => [item.year, item.value]));
+        const ocfByYear = new Map(ocf.map(item => [item.year, item.value]));
+        const icfByYear = new Map(icf.map(item => [item.year, item.value]));
+        const currentAssetsByYear = new Map(currentAssets.map(item => [item.year, item.value]));
+        const currentLiabilitiesByYear = new Map(currentLiabilities.map(item => [item.year, item.value]));
+        const cashByYear = new Map(cashAndEquivalents.map(item => [item.year, item.value]));
+        const totalDebtByYear = new Map(totalDebt.map(item => [item.year, item.value]));
+        const totalAssetsByYear = new Map(totalAssets.map(item => [item.year, item.value]));
+        const totalEquityByYear = new Map(totalEquity.map(item => [item.year, item.value]));
+
+        const ratioHead = document.getElementById("ratioTrendHead");
+        const ratioBody = document.getElementById("ratioTrendBody");
+        ratioHead.innerHTML = `<tr><th>Ratio</th>${highlightsYears.map(y => `<th>${y}</th>`).join("")}</tr>`;
+        ratioBody.innerHTML = "";
+
+        const ratioRows = [
+          {
+            label: "Gross Margin",
+            value: year => ratioPercent(grossByYear.get(year) ?? null, revenueByYear.get(year) ?? null),
+          },
+          {
+            label: "Operating Margin",
+            value: year => ratioPercent(opByYear.get(year) ?? null, revenueByYear.get(year) ?? null),
+          },
+          {
+            label: "Net Margin",
+            value: year => ratioPercent(netByYear.get(year) ?? null, revenueByYear.get(year) ?? null),
+          },
+          {
+            label: "OCF Margin",
+            value: year => ratioPercent(ocfByYear.get(year) ?? null, revenueByYear.get(year) ?? null),
+          },
+          {
+            label: "FCF Proxy Margin",
+            value: year => {
+              const rev = revenueByYear.get(year) ?? null;
+              const fcfProxy = (ocfByYear.get(year) ?? 0) + (icfByYear.get(year) ?? 0);
+              return ratioPercent(fcfProxy, rev);
+            },
+          },
+          {
+            label: "Current Ratio (x)",
+            value: year => ratioMultiple(currentAssetsByYear.get(year) ?? null, currentLiabilitiesByYear.get(year) ?? null),
+            formatter: fmtMultiple,
+          },
+          {
+            label: "Cash Ratio (x)",
+            value: year => ratioMultiple(cashByYear.get(year) ?? null, currentLiabilitiesByYear.get(year) ?? null),
+            formatter: fmtMultiple,
+          },
+          {
+            label: "Debt to Equity (x)",
+            value: year => ratioMultiple(totalDebtByYear.get(year) ?? null, totalEquityByYear.get(year) ?? null),
+            formatter: fmtMultiple,
+          },
+          {
+            label: "Debt to Assets",
+            value: year => ratioPercent(totalDebtByYear.get(year) ?? null, totalAssetsByYear.get(year) ?? null),
+          },
+          {
+            label: "Equity to Assets",
+            value: year => ratioPercent(totalEquityByYear.get(year) ?? null, totalAssetsByYear.get(year) ?? null),
+          },
+          {
+            label: "Asset Turnover (x)",
+            value: year => ratioMultiple(revenueByYear.get(year) ?? null, totalAssetsByYear.get(year) ?? null),
+            formatter: fmtMultiple,
+          },
+        ];
+
+        ratioRows.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${row.label}</td>${highlightsYears.map(year => `<td>${(row.formatter || fmtPct)(row.value(year))}</td>`).join("")}`;
+          ratioBody.appendChild(tr);
+        });
+
+        const grossMargin = ratioPercent(grossLatest, revenueLatest);
+        const opMargin = ratioPercent(opLatest, revenueLatest);
+        const netMargin = ratioPercent(netLatest, revenueLatest);
+        const ocfMargin = ratioPercent(ocfLatest, revenueLatest);
+        const fcfProxyMargin = ratioPercent((ocfLatest ?? 0) + (icfLatest ?? 0), revenueLatest);
+        const cashConversion = ratioPercent(ocfLatest, netLatest);
+
+        const positiveNetYears = net.filter(item => item.value > 0).length;
+        const positiveOcfYears = ocf.filter(item => item.value > 0).length;
+
+        document.getElementById("qlGrossMargin").innerText = fmtPct(grossMargin);
+        document.getElementById("qlOpMargin").innerText = fmtPct(opMargin);
+        document.getElementById("qlNetMargin").innerText = fmtPct(netMargin);
+        document.getElementById("qlOcfMargin").innerText = fmtPct(ocfMargin);
+        document.getElementById("qlFcfProxy").innerText = fmtPct(fcfProxyMargin);
+        document.getElementById("qlNetPositiveYears").innerText = `${positiveNetYears}/${Math.max(net.length, 1)}`;
+        document.getElementById("qlOcfPositiveYears").innerText = `${positiveOcfYears}/${Math.max(ocf.length, 1)}`;
+
+        const currentAssetsLatest = latestPoint(currentAssets)?.value ?? null;
+        const currentLiabilitiesLatest = latestPoint(currentLiabilities)?.value ?? null;
+        const cashLatest = latestPoint(cashAndEquivalents)?.value ?? null;
+        const totalDebtLatest = latestPoint(totalDebt)?.value ?? null;
+        const totalAssetsLatest = latestPoint(totalAssets)?.value ?? null;
+        const totalEquityLatest = latestPoint(totalEquity)?.value ?? null;
+
+        document.getElementById("capCurrentRatio").innerText = fmtMultiple(ratioMultiple(currentAssetsLatest, currentLiabilitiesLatest));
+        document.getElementById("capCashRatio").innerText = fmtMultiple(ratioMultiple(cashLatest, currentLiabilitiesLatest));
+        document.getElementById("capDebtToEquity").innerText = fmtMultiple(ratioMultiple(totalDebtLatest, totalEquityLatest));
+        document.getElementById("capDebtToAssets").innerText = fmtPct(ratioPercent(totalDebtLatest, totalAssetsLatest));
+        document.getElementById("capEquityToAssets").innerText = fmtPct(ratioPercent(totalEquityLatest, totalAssetsLatest));
+        document.getElementById("capAssetTurnover").innerText = fmtMultiple(ratioMultiple(revenueLatest, totalAssetsLatest));
+
+        const strengthScore = avgDefined([
+          scoreFromPercent(ocfMargin, -5, 25),
+          scoreFromPercent(cashConversion, 20, 180),
+          scoreFromPercent((positiveOcfYears / Math.max(ocf.length, 1)) * 100, 40, 100),
+        ]);
+        const profitabilityScore = avgDefined([
+          scoreFromPercent(grossMargin, 15, 60),
+          scoreFromPercent(opMargin, 5, 35),
+          scoreFromPercent(netMargin, 2, 25),
+        ]);
+        const growthScore = avgDefined([
+          scoreFromPercent(calcCagr(revenue), 0, 20),
+          scoreFromPercent(calcYoY(revenue), -10, 20),
+          scoreFromPercent(calcYoY(net), -15, 25),
+        ]);
+        const cashflowScore = avgDefined([
+          scoreFromPercent(ocfMargin, -5, 25),
+          scoreFromPercent(fcfProxyMargin, -10, 15),
+          scoreFromPercent(cashConversion, 20, 180),
+        ]);
+
+        document.getElementById("signalStrength").innerText = fmtScore(strengthScore);
+        document.getElementById("signalProfitability").innerText = fmtScore(profitabilityScore);
+        document.getElementById("signalGrowth").innerText = fmtScore(growthScore);
+        document.getElementById("signalCashflow").innerText = fmtScore(cashflowScore);
+
+        const stats = view.stats || {};
+        document.getElementById("companyRawPoints").innerText = stats.raw_points ?? "-";
+        document.getElementById("companyDedupPoints").innerText = stats.dedup_points ?? "-";
+        document.getElementById("companyDupes").innerText = stats.duplicates_dropped ?? "-";
+
+        const sourceBreakdown = document.getElementById("companySourceBreakdown");
+        const sourceItems = Object.entries(stats.source_breakdown || {}).sort((a, b) => b[1] - a[1]);
+        sourceBreakdown.innerHTML = sourceItems.length
+          ? sourceItems.map(([source, count]) => `<span class="source-pill">${source}: ${count}</span>`).join("")
+          : `<span class="source-pill">No source data</span>`;
+      }
+
+      function setStatus(message, isError = false) {
+        const status = document.getElementById("status");
+        status.innerText = message;
+        status.classList.toggle("error", isError);
+      }
+
+      function fmt(v) {
+        return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(v);
+      }
+
+      function statusClass(status) {
+        const normalized = (status || "").toLowerCase();
+        if (["completed", "failed", "uploaded", "pending", "running"].includes(normalized)) return normalized;
+        return "pending";
+      }
+
+      function latestPoint(series) {
+        return series.length ? series[series.length - 1] : null;
+      }
+
+      function toValueMap(series) {
+        return new Map((series || []).map(item => [item.year, item.value]));
+      }
+
+      function prevPoint(series) {
+        return series.length > 1 ? series[series.length - 2] : null;
+      }
+
+      function ratioPercent(numerator, denominator) {
+        if (numerator == null || denominator == null || denominator === 0) return null;
+        return (numerator / denominator) * 100;
+      }
+
+      function ratioMultiple(numerator, denominator) {
+        if (numerator == null || denominator == null || denominator === 0) return null;
+        return numerator / denominator;
+      }
+
+      function calcYoY(series) {
+        const latest = latestPoint(series);
+        const prev = prevPoint(series);
+        if (!latest || !prev || prev.value === 0) return null;
+        return ((latest.value - prev.value) / Math.abs(prev.value)) * 100;
+      }
+
+      function calcCagr(series) {
+        const first = series.length ? series[0] : null;
+        const last = latestPoint(series);
+        if (!first || !last || first.value <= 0 || last.year <= first.year) return null;
+        return (Math.pow(last.value / first.value, 1 / (last.year - first.year)) - 1) * 100;
+      }
+
+      function fmtPct(value) {
+        return value == null ? "-" : `${value.toFixed(1)}%`;
+      }
+
+      function fmtMultiple(value) {
+        return value == null ? "-" : `${value.toFixed(2)}x`;
+      }
+
+      function getSeriesByAliases(series, aliases) {
+        for (const alias of aliases) {
+          const candidate = series[alias];
+          if (candidate && candidate.length) return candidate;
+        }
+        return [];
+      }
+
+      function statementOrderWeight(statement) {
+        const order = {
+          income_statement: 1,
+          balance_sheet: 2,
+          cash_flow: 3,
+          derived_metrics: 4,
+        };
+        return order[statement] ?? 9;
+      }
+
+      function humanizeStatement(statement) {
+        return (statement || "").replaceAll("_", " ");
+      }
+
+      function rollingCagrPercent(valuesByYear, years, targetYear) {
+        const available = years.filter(year => year <= targetYear && (valuesByYear.get(year) ?? null) != null);
+        if (available.length < 2) return null;
+        const startYear = available[0];
+        const endYear = available[available.length - 1];
+        const startValue = valuesByYear.get(startYear);
+        const endValue = valuesByYear.get(endYear);
+        if (startValue == null || endValue == null || startValue <= 0 || endYear <= startYear) return null;
+        return (Math.pow(endValue / startValue, 1 / (endYear - startYear)) - 1) * 100;
+      }
+
+      function buildDerivedStatementRows(series, years) {
+        const revenue = toValueMap(series["Revenue"] || []);
+        const costOfRevenue = toValueMap(getSeriesByAliases(series, ["Cost of Revenue"]));
+        const gross = toValueMap(series["Gross Profit"] || []);
+        const op = toValueMap(series["Operating Profit"] || []);
+        const net = toValueMap(series["Net Profit"] || []);
+        const netBeforeTax = toValueMap(getSeriesByAliases(series, ["Net Profit Before Tax"]));
+        const ocf = toValueMap(series["Operating Cash Flow"] || []);
+        const icf = toValueMap(series["Investing Cash Flow"] || []);
+        const cash = toValueMap(getSeriesByAliases(series, ["Cash and Cash Equivalents", "Cash"]));
+        const currentAssets = toValueMap(getSeriesByAliases(series, ["Total Current Assets", "Current Assets"]));
+        const currentLiabilities = toValueMap(getSeriesByAliases(series, ["Total Current Liabilities", "Current Liabilities"]));
+        const totalLiabilities = toValueMap(getSeriesByAliases(series, ["Total Liabilities", "Total Debt"]));
+        const totalAssets = toValueMap(getSeriesByAliases(series, ["Total Assets"]));
+        const totalEquity = toValueMap(getSeriesByAliases(series, ["Total Equity", "Shareholders Equity"]));
+
+        const rows = [];
+        const pushRow = (metric, format, calculator) => {
+          const values = {};
+          let hasValue = false;
+          years.forEach((year, idx) => {
+            const value = calculator(year, idx);
+            if (value != null) hasValue = true;
+            values[String(year)] = value == null || Number.isNaN(value) || !Number.isFinite(value) ? null : value;
+          });
+          if (!hasValue) return;
+          rows.push({ statement: "derived_metrics", metric, format, values });
+        };
+
+        pushRow("Gross Margin", "percent", year => ratioPercent(gross.get(year) ?? null, revenue.get(year) ?? null));
+        pushRow("Operating Margin", "percent", year => ratioPercent(op.get(year) ?? null, revenue.get(year) ?? null));
+        pushRow("Net Margin", "percent", year => ratioPercent(net.get(year) ?? null, revenue.get(year) ?? null));
+        pushRow("Net Profit Before Tax Margin", "percent", year => ratioPercent(netBeforeTax.get(year) ?? null, revenue.get(year) ?? null));
+        pushRow("Cost of Revenue to Revenue", "percent", year => ratioPercent(Math.abs(costOfRevenue.get(year) ?? null), revenue.get(year) ?? null));
+        pushRow("Operating Cash Flow Margin", "percent", year => ratioPercent(ocf.get(year) ?? null, revenue.get(year) ?? null));
+        pushRow("FCF Proxy", "number", year => (ocf.get(year) ?? null) == null && (icf.get(year) ?? null) == null ? null : (ocf.get(year) ?? 0) + (icf.get(year) ?? 0));
+        pushRow("FCF Proxy Margin", "percent", year => ratioPercent((ocf.get(year) ?? 0) + (icf.get(year) ?? 0), revenue.get(year) ?? null));
+        pushRow("Current Ratio", "multiple", year => ratioMultiple(currentAssets.get(year) ?? null, currentLiabilities.get(year) ?? null));
+        pushRow("Cash Ratio", "multiple", year => ratioMultiple(cash.get(year) ?? null, currentLiabilities.get(year) ?? null));
+        pushRow("Debt to Equity", "multiple", year => ratioMultiple(totalLiabilities.get(year) ?? null, totalEquity.get(year) ?? null));
+        pushRow("Debt to Assets", "percent", year => ratioPercent(totalLiabilities.get(year) ?? null, totalAssets.get(year) ?? null));
+        pushRow("Equity to Assets", "percent", year => ratioPercent(totalEquity.get(year) ?? null, totalAssets.get(year) ?? null));
+        pushRow("Asset Turnover", "multiple", year => ratioMultiple(revenue.get(year) ?? null, totalAssets.get(year) ?? null));
+        pushRow("Return on Assets", "percent", year => ratioPercent(net.get(year) ?? null, totalAssets.get(year) ?? null));
+        pushRow("Return on Equity", "percent", year => ratioPercent(net.get(year) ?? null, totalEquity.get(year) ?? null));
+        pushRow("Operating Return on Capital", "percent", year => ratioPercent(op.get(year) ?? null, totalEquity.get(year) ?? null));
+        pushRow("Operating Cash Flow to Net Income", "multiple", year => ratioMultiple(ocf.get(year) ?? null, net.get(year) ?? null));
+        pushRow("Operating Cash Flow to Liabilities", "percent", year => ratioPercent(ocf.get(year) ?? null, totalLiabilities.get(year) ?? null));
+        pushRow("Cash to Assets", "percent", year => ratioPercent(cash.get(year) ?? null, totalAssets.get(year) ?? null));
+        pushRow("Liabilities to Assets", "percent", year => ratioPercent(totalLiabilities.get(year) ?? null, totalAssets.get(year) ?? null));
+        pushRow("Working Capital", "number", year => (currentAssets.get(year) ?? null) == null || (currentLiabilities.get(year) ?? null) == null ? null : (currentAssets.get(year) ?? 0) - (currentLiabilities.get(year) ?? 0));
+        pushRow("Working Capital to Revenue", "percent", year => ratioPercent((currentAssets.get(year) ?? 0) - (currentLiabilities.get(year) ?? 0), revenue.get(year) ?? null));
+        pushRow("Tax Drag", "percent", year => {
+          const pbt = netBeforeTax.get(year) ?? null;
+          const netIncome = net.get(year) ?? null;
+          if (pbt == null || netIncome == null || pbt === 0) return null;
+          return ((pbt - netIncome) / pbt) * 100;
+        });
+
+        pushRow("Revenue YoY Growth", "percent", (year, idx) => {
+          if (idx === 0) return null;
+          const prev = years[idx - 1];
+          return ratioPercent((revenue.get(year) ?? null) == null || (revenue.get(prev) ?? null) == null ? null : (revenue.get(year) ?? 0) - (revenue.get(prev) ?? 0), Math.abs(revenue.get(prev) ?? 0));
+        });
+        pushRow("Gross Profit YoY Growth", "percent", (year, idx) => {
+          if (idx === 0) return null;
+          const prev = years[idx - 1];
+          return ratioPercent((gross.get(year) ?? null) == null || (gross.get(prev) ?? null) == null ? null : (gross.get(year) ?? 0) - (gross.get(prev) ?? 0), Math.abs(gross.get(prev) ?? 0));
+        });
+        pushRow("Operating Profit YoY Growth", "percent", (year, idx) => {
+          if (idx === 0) return null;
+          const prev = years[idx - 1];
+          return ratioPercent((op.get(year) ?? null) == null || (op.get(prev) ?? null) == null ? null : (op.get(year) ?? 0) - (op.get(prev) ?? 0), Math.abs(op.get(prev) ?? 0));
+        });
+        pushRow("Net Profit YoY Growth", "percent", (year, idx) => {
+          if (idx === 0) return null;
+          const prev = years[idx - 1];
+          return ratioPercent((net.get(year) ?? null) == null || (net.get(prev) ?? null) == null ? null : (net.get(year) ?? 0) - (net.get(prev) ?? 0), Math.abs(net.get(prev) ?? 0));
+        });
+        pushRow("Operating Cash Flow YoY Growth", "percent", (year, idx) => {
+          if (idx === 0) return null;
+          const prev = years[idx - 1];
+          return ratioPercent((ocf.get(year) ?? null) == null || (ocf.get(prev) ?? null) == null ? null : (ocf.get(year) ?? 0) - (ocf.get(prev) ?? 0), Math.abs(ocf.get(prev) ?? 0));
+        });
+
+        pushRow("Revenue CAGR from Base", "percent", year => rollingCagrPercent(revenue, years, year));
+        pushRow("Net Profit CAGR from Base", "percent", year => rollingCagrPercent(net, years, year));
+        pushRow("Operating Cash Flow CAGR from Base", "percent", year => rollingCagrPercent(ocf, years, year));
+
+        return rows;
+      }
+
+      function renderDerivedMetricsCard(rows, years) {
+        const body = document.getElementById("derivedMetricsBody");
+        const meta = document.getElementById("derivedMetricsMeta");
+        const latestYear = years.length ? years[years.length - 1] : null;
+        if (meta) {
+          meta.innerText = latestYear == null ? "Latest year: n/a" : `Latest year: ${latestYear} · ${rows.length} metrics`;
+        }
+        if (!body) return;
+
+        body.innerHTML = "";
+        rows.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${row.metric}</td><td>${fmtStatementValue(row.values[String(latestYear)], row.format)}</td>`;
+          body.appendChild(tr);
+        });
+      }
+
+      function syncStatementFilter(view) {
+        const filter = document.getElementById("statementFilter");
+        if (!filter || !view) return;
+
+        const currentValue = filter.value || "all";
+        const statements = [...new Set((view.table || []).map(row => row.statement))]
+          .sort((a, b) => statementOrderWeight(a) - statementOrderWeight(b) || a.localeCompare(b));
+
+        filter.innerHTML = `<option value="all">All statements</option>${statements
+          .map(statement => `<option value="${statement}">${humanizeStatement(statement)}</option>`)
+          .join("")}`;
+
+        filter.value = statements.includes(currentValue) ? currentValue : "all";
+      }
+
+      function clampScore(value) {
+        return Math.max(0, Math.min(10, value));
+      }
+
+      function scoreFromPercent(value, min, max) {
+        if (value == null || max === min) return null;
+        const normalized = ((value - min) / (max - min)) * 10;
+        return clampScore(normalized);
+      }
+
+      function avgDefined(values) {
+        const filtered = values.filter(v => v != null);
+        if (!filtered.length) return null;
+        return filtered.reduce((sum, v) => sum + v, 0) / filtered.length;
+      }
+
+      function fmtScore(value) {
+        return value == null ? "-" : `${value.toFixed(1)}/10`;
+      }
+
+      function renderDeltaCell(elementId, value) {
+        const el = document.getElementById(elementId);
+        el.classList.remove("delta-up", "delta-down", "delta-flat");
+        if (value == null) {
+          el.innerText = "-";
+          return;
+        }
+        const prefix = value > 0 ? "+" : "";
+        el.innerText = `${prefix}${value.toFixed(1)}%`;
+        if (value > 0.1) el.classList.add("delta-up");
+        else if (value < -0.1) el.classList.add("delta-down");
+        else el.classList.add("delta-flat");
+      }
+
+      async function api(path, options = {}) {
+        const headers = options.headers || {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        if (!(options.body instanceof FormData)) headers["Content-Type"] = "application/json";
+        const res = await fetch(path, { ...options, headers });
+        if (res.status === 401) {
+          localStorage.removeItem("auth_token");
+          token = "";
+          redirectToLogin();
+          throw new Error("Unauthorized");
+        }
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      }
+
+      function checkForOverlays() {
+        console.log("Checking for overlay elements...");
+        
+        // Check for elements with high z-index
+        const allElements = document.querySelectorAll('*');
+        const highZIndexElements = [];
+        const overlayElements = [];
+        
+        allElements.forEach(el => {
+          const styles = window.getComputedStyle(el);
+          const zIndex = parseInt(styles.zIndex);
+          const position = styles.position;
+          const display = styles.display;
+          
+          if (zIndex > 100 && position !== 'static' && display !== 'none') {
+            highZIndexElements.push({
+              element: el,
+              zIndex: zIndex,
+              position: position,
+              display: display,
+              tagName: el.tagName,
+              className: el.className,
+              id: el.id
+            });
+          }
+          
+          // Check for common overlay patterns
+          if (el.classList.contains('modal') || 
+              el.classList.contains('overlay') ||
+              el.classList.contains('backdrop') ||
+              styles.position === 'fixed' && 
+              (styles.top === '0px' || styles.left === '0px') &&
+              (parseInt(styles.width) > window.innerWidth * 0.8 || 
+               parseInt(styles.height) > window.innerHeight * 0.8)) {
+            overlayElements.push({
+              element: el,
+              tagName: el.tagName,
+              className: el.className,
+              id: el.id,
+              position: styles.position,
+              top: styles.top,
+              left: styles.left,
+              width: styles.width,
+              height: styles.height
+            });
+          }
+        });
+        
+        console.log("High z-index elements:", highZIndexElements);
+        console.log("Potential overlay elements:", overlayElements);
+        
+        // Check body styles
+        const bodyStyles = window.getComputedStyle(document.body);
+        console.log("Body styles:", {
+          overflow: bodyStyles.overflow,
+          position: bodyStyles.position,
+          pointerEvents: bodyStyles.pointerEvents
+        });
+        
+        return { highZIndexElements, overlayElements };
+      }
+
+      async function initDashboard() {
+        console.log("initDashboard called");
+        
+        if (!token) {
+          console.log("No token, redirecting to login");
+          redirectToLogin();
+          return;
+        }
+
+        console.log("Token exists, validating session");
+        try {
+          const userResponse = await api("/auth/me");
+          currentUser = userResponse;
+          console.log("Session validated, loading companies");
+          await loadCompanies();
+          console.log("Dashboard initialization complete");
+          
+          // Hide admin-only features for non-admin users
+          if (currentUser && currentUser.role !== "admin") {
+            const ingestionTab = document.getElementById("tabIngestionBtn");
+            const ingestionPane = document.getElementById("tabIngestion");
+            if (ingestionTab) ingestionTab.remove();
+            if (ingestionPane) ingestionPane.remove();
+            
+            // Remove ingestion from tab switching logic
+            const tabNames = ["summary", "company", "statements"];
+            tabNames.forEach(name => {
+              const pane = document.getElementById(`tab${name[0].toUpperCase() + name.slice(1)}`);
+              const btn = document.getElementById(`tab${name[0].toUpperCase() + name.slice(1)}Btn`);
+              if (pane && btn) {
+                pane.classList.toggle("active", name === "summary");
+                btn.classList.toggle("active", name === "summary");
+              }
+            });
+          } else {
+            // Show ingestion help text for admin users
+            const ingestionHelpText = document.getElementById("ingestionHelpText");
+            if (ingestionHelpText) ingestionHelpText.style.display = "inline";
+          }
+          
+          // Check for overlays after everything loads
+          setTimeout(checkForOverlays, 1000);
+        } catch (error) {
+          console.error("Dashboard init error:", error);
+          setStatus("Session expired. Please login again.", true);
+        }
+      }
+
+      async function loadCompanies() {
+        const companies = await api("/companies");
+        const sel = document.getElementById("companySelect");
+        sel.innerHTML = "";
+        if (!companies.length) {
+          setStatus("No companies available", true);
+          return;
+        }
+
+        companies.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = `${c.name} (${c.ticker})`;
+          sel.appendChild(opt);
+        });
+
+        selectedCompanyId = Number(sel.value);
+        sel.onchange = async event => {
+          selectedCompanyId = Number(event.target.value);
+          await loadOverview();
+          if (currentUser && currentUser.role === "admin") {
+            await loadJobs();
+          }
+        };
+
+        await loadOverview();
+        if (currentUser && currentUser.role === "admin") {
+          await loadJobs();
+        }
+      }
+
+      async function loadOverview() {
+        if (!selectedCompanyId) return;
+        const requestId = ++overviewRequestId;
+        const companyId = selectedCompanyId;
+
+        const data = await api(`/dashboard/overview?company_id=${companyId}&_ts=${Date.now()}`);
+        const quality = await api(`/companies/${companyId}/quality/latest?_ts=${Date.now()}`);
+        const companyViewPayload = await api(`/companies/${companyId}/view?_ts=${Date.now()}`);
+        if (requestId !== overviewRequestId || companyId !== selectedCompanyId) return;
+        const series = data.series || {};
+        const derivedRows = buildDerivedStatementRows(series, companyViewPayload.years || []);
+        const companyView = {
+          ...companyViewPayload,
+          table: [...(companyViewPayload.table || []), ...derivedRows],
+        };
+        lastCompanyView = companyView;
+
+        const revenue = series["Revenue"] || [];
+        const gross = series["Gross Profit"] || [];
+        const net = series["Net Profit"] || [];
+        const op = series["Operating Profit"] || [];
+        const ocfSeries = series["Operating Cash Flow"] || [];
+        const totalCurrentAssets = getSeriesByAliases(series, ["Total Current Assets", "Current Assets"]);
+        const totalCurrentLiabilities = getSeriesByAliases(series, ["Total Current Liabilities", "Current Liabilities"]);
+        const totalDebt = getSeriesByAliases(series, ["Total Debt", "Total Liabilities"]);
+        const totalEquity = getSeriesByAliases(series, ["Total Equity", "Shareholders Equity"]);
+        const totalAssets = getSeriesByAliases(series, ["Total Assets"]);
+        const revenueBase = revenue.length ? revenue[0].value : null;
+        const revenueLatest = latestPoint(revenue)?.value ?? null;
+        const currentAssetsLatest = latestPoint(totalCurrentAssets)?.value ?? null;
+        const currentLiabilitiesLatest = latestPoint(totalCurrentLiabilities)?.value ?? null;
+        const totalDebtLatest = latestPoint(totalDebt)?.value ?? null;
+        const totalEquityLatest = latestPoint(totalEquity)?.value ?? null;
+        const totalAssetsLatest = latestPoint(totalAssets)?.value ?? null;
+
+        document.getElementById("kpiRevenue").innerText = revenue.length ? fmt(revenue[revenue.length - 1].value) : "-";
+        document.getElementById("kpiRevenueBase").innerText = revenueBase == null ? "-" : fmt(revenueBase);
+        document.getElementById("kpiNet").innerText = net.length ? fmt(net[net.length - 1].value) : "-";
+        document.getElementById("kpiOp").innerText = op.length ? fmt(op[op.length - 1].value) : "-";
+        document.getElementById("kpiCurrentRatio").innerText = fmtMultiple(ratioMultiple(currentAssetsLatest, currentLiabilitiesLatest));
+        document.getElementById("kpiDebtToEquity").innerText = fmtMultiple(ratioMultiple(totalDebtLatest, totalEquityLatest));
+        document.getElementById("kpiAssetTurnover").innerText = fmtMultiple(ratioMultiple(revenueLatest, totalAssetsLatest));
+
+        const qualityText = quality.match_rate == null ? "n/a" : `${quality.match_rate.toFixed(1)}%`;
+        document.getElementById("kpiQuality").innerText = qualityText;
+        document.getElementById("kpiQualityInline").innerText = qualityText;
+
+        document.getElementById("companyMeta").innerText = companyView.company.name;
+        document.getElementById("companyTicker").innerText = companyView.company.ticker;
+        document.getElementById("companySector").innerText = companyView.company.sector;
+        document.getElementById("currentCompanyBadge").innerText = `${companyView.company.name} (${companyView.company.ticker})`;
+        document.getElementById("summaryCompanyName").innerText = `${companyView.company.name} (${companyView.company.ticker})`;
+
+        const coverage = companyView.years.length ? `${Math.min(...companyView.years)}-${Math.max(...companyView.years)}` : "n/a";
+        document.getElementById("companyCoverage").innerText = coverage;
+        document.getElementById("coverageBadge").innerText = coverage;
+        document.getElementById("summaryCompanyMeta").innerText = `${companyView.company.sector} · ${coverage}`;
+
+        renderCompanyProfile(companyView, series, qualityText);
+        renderDerivedMetricsCard(derivedRows, companyView.years || []);
+
+        syncStatementFilter(companyView);
+        renderStatementsTable(companyView);
+
+        const years = [...new Set([...revenue, ...gross, ...op, ...net, ...ocfSeries].map(x => x.year))].sort((a, b) => a - b);
+        const revenueByYear = years.map(y => (revenue.find(v => v.year === y) || {}).value || 0);
+        const netByYear = years.map(y => (net.find(v => v.year === y) || {}).value || 0);
+        const grossMap = new Map(gross.map(v => [v.year, v.value]));
+        const opMap = new Map(op.map(v => [v.year, v.value]));
+        const netMap = new Map(net.map(v => [v.year, v.value]));
+        const revenueMap = new Map(revenue.map(v => [v.year, v.value]));
+        const ocfMap = new Map(ocfSeries.map(v => [v.year, v.value]));
+
+        if (trendChart) trendChart.destroy();
+        trendChart = new Chart(document.getElementById("trendChart"), {
+          type: "line",
+          data: {
+            labels: years,
+            datasets: [
+              {
+                label: "Revenue",
+                data: revenueByYear,
+                borderColor: "#2a5f99",
+                borderWidth: 2,
+                pointRadius: 2,
+                tension: 0.2
+              },
+              {
+                label: "Net Profit",
+                data: netByYear,
+                borderColor: "#1f8f5f",
+                borderWidth: 2,
+                pointRadius: 2,
+                tension: 0.2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { grid: { color: "#edf2f8" } },
+              y: { grid: { color: "#edf2f8" } }
+            },
+            plugins: { legend: { labels: { boxWidth: 10 } } }
+          }
+        });
+
+        const ocf = series["Operating Cash Flow"] || [];
+        const icf = series["Investing Cash Flow"] || [];
+        const fcf = series["Financing Cash Flow"] || [];
+        const latestYear = [...new Set([...ocf, ...icf, ...fcf].map(x => x.year))].sort().at(-1);
+        const cashValues = [
+          (ocf.find(v => v.year === latestYear) || {}).value || 0,
+          Math.abs((icf.find(v => v.year === latestYear) || {}).value || 0),
+          Math.abs((fcf.find(v => v.year === latestYear) || {}).value || 0)
+        ];
+
+        if (cashChart) cashChart.destroy();
+        cashChart = new Chart(document.getElementById("cashChart"), {
+          type: "bar",
+          data: {
+            labels: ["Operating", "Investing", "Financing"],
+            datasets: [{ label: `Cash Flow ${latestYear || ""}`, data: cashValues, backgroundColor: ["#2a5f99", "#8fb1d6", "#1f8f5f"] }]
+          },
+          options: {
+            responsive: true,
+            scales: { y: { grid: { color: "#edf2f8" } } },
+            plugins: { legend: { labels: { boxWidth: 10 } } }
+          }
+        });
+
+        const marginYears = years;
+        const grossMarginSeries = marginYears.map(y => ratioPercent(grossMap.get(y) ?? null, revenueMap.get(y) ?? null));
+        const opMarginSeries = marginYears.map(y => ratioPercent(opMap.get(y) ?? null, revenueMap.get(y) ?? null));
+        const netMarginSeries = marginYears.map(y => ratioPercent(netMap.get(y) ?? null, revenueMap.get(y) ?? null));
+        const ocfMarginSeries = marginYears.map(y => ratioPercent(ocfMap.get(y) ?? null, revenueMap.get(y) ?? null));
+
+        if (marginChart) marginChart.destroy();
+        marginChart = new Chart(document.getElementById("marginChart"), {
+          type: "line",
+          data: {
+            labels: marginYears,
+            datasets: [
+              { label: "Gross Margin", data: grossMarginSeries, borderColor: "#2a5f99", tension: 0.25, pointRadius: 2 },
+              { label: "Operating Margin", data: opMarginSeries, borderColor: "#1f8f5f", tension: 0.25, pointRadius: 2 },
+              { label: "Net Margin", data: netMarginSeries, borderColor: "#f59e0b", tension: 0.25, pointRadius: 2 },
+              { label: "OCF Margin", data: ocfMarginSeries, borderColor: "#7c3aed", tension: 0.25, pointRadius: 2 },
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { grid: { color: "#edf2f8" } },
+              y: { grid: { color: "#edf2f8" }, ticks: { callback: value => `${value}%` } }
+            },
+            plugins: { legend: { labels: { boxWidth: 10 } } }
+          }
+        });
+
+        const balanceYears = [...new Set([...totalAssets, ...totalDebt, ...totalEquity].map(x => x.year))].sort((a, b) => a - b);
+        const assetsByYear = balanceYears.map(y => (totalAssets.find(v => v.year === y) || {}).value ?? null);
+        const liabilitiesByYear = balanceYears.map(y => (totalDebt.find(v => v.year === y) || {}).value ?? null);
+        const equityByYear = balanceYears.map(y => (totalEquity.find(v => v.year === y) || {}).value ?? null);
+
+        if (balanceChart) balanceChart.destroy();
+        balanceChart = new Chart(document.getElementById("balanceChart"), {
+          type: "line",
+          data: {
+            labels: balanceYears,
+            datasets: [
+              { label: "Total Assets", data: assetsByYear, borderColor: "#224d7f", backgroundColor: "rgba(34,77,127,0.12)", fill: true, tension: 0.2, pointRadius: 2 },
+              { label: "Total Liabilities", data: liabilitiesByYear, borderColor: "#bf3e3e", tension: 0.2, pointRadius: 2 },
+              { label: "Total Equity", data: equityByYear, borderColor: "#1f8f5f", tension: 0.2, pointRadius: 2 },
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { grid: { color: "#edf2f8" } },
+              y: { grid: { color: "#edf2f8" } }
+            },
+            plugins: { legend: { labels: { boxWidth: 10 } } }
+          }
+        });
+
+        const growthYears = years.slice(1);
+        const growthDataset = sourceMap => growthYears.map((year, idx) => {
+          const prevYear = years[idx];
+          const current = sourceMap.get(year) ?? null;
+          const prev = sourceMap.get(prevYear) ?? null;
+          if (current == null || prev == null || prev === 0) return null;
+          return ((current - prev) / Math.abs(prev)) * 100;
+        });
+
+        if (growthChart) growthChart.destroy();
+        growthChart = new Chart(document.getElementById("growthChart"), {
+          type: "bar",
+          data: {
+            labels: growthYears,
+            datasets: [
+              { label: "Revenue YoY", data: growthDataset(revenueMap), backgroundColor: "#2a5f99" },
+              { label: "Net Profit YoY", data: growthDataset(netMap), backgroundColor: "#1f8f5f" },
+              { label: "OCF YoY", data: growthDataset(ocfMap), backgroundColor: "#f59e0b" },
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { stacked: false, grid: { color: "#edf2f8" } },
+              y: { grid: { color: "#edf2f8" }, ticks: { callback: value => `${value}%` } }
+            },
+            plugins: { legend: { labels: { boxWidth: 10 } } }
+          }
+        });
+      }
+
+      function renderStatementsTable(view) {
+        if (!view) return;
+        const head = document.getElementById("statementHead");
+        const body = document.getElementById("statementBody");
+        const stats = document.getElementById("statementStats");
+        const filter = document.getElementById("statementFilter");
+        const selectedStatement = filter ? filter.value : "all";
+        const years = view.years || [];
+        head.innerHTML = `<tr><th>Statement</th><th>Metric</th>${years.map(y => `<th>${y}</th>`).join("")}</tr>`;
+
+        body.innerHTML = "";
+        const rows = (view.table || [])
+          .filter(row => selectedStatement === "all" || row.statement === selectedStatement)
+          .sort((a, b) => {
+            const statementDiff = statementOrderWeight(a.statement) - statementOrderWeight(b.statement);
+            if (statementDiff !== 0) return statementDiff;
+            return a.metric.localeCompare(b.metric);
+          });
+
+        rows.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><span class="statement-badge">${humanizeStatement(row.statement)}</span></td>
+            <td>${row.metric}</td>
+            ${years.map(y => `<td>${fmtStatementValue(row.values[String(y)], row.format)}</td>`).join("")}
+          `;
+          body.appendChild(tr);
+        });
+
+        if (stats) {
+          const statementLabel = selectedStatement === "all" ? "all statements" : humanizeStatement(selectedStatement);
+          stats.innerText = `${rows.length} metrics · ${years.length} years · ${statementLabel}`;
+        }
+      }
+
+      function fmtStatementValue(value, format) {
+        if (value == null) return "-";
+        if (format === "percent") return fmtPct(value);
+        if (format === "multiple") return fmtMultiple(value);
+        return fmt(value);
+      }
+
+      async function uploadPdf() {
+        const input = document.getElementById("pdfInput");
+        if (!selectedCompanyId) {
+          setStatus("Select company first", true);
+          return;
+        }
+        if (!input.files.length) {
+          setStatus("Choose PDF to upload", true);
+          return;
+        }
+
+        try {
+          const form = new FormData();
+          form.append("company_id", String(selectedCompanyId));
+          form.append("pdf_file", input.files[0]);
+
+          const data = await api("/ingestion/upload", {
+            method: "POST",
+            body: form,
+            headers: {}
+          });
+          setStatus(`${data.status}: ${data.message}`, data.status === "failed");
+          await loadOverview();
+          if (currentUser && currentUser.role === "admin") {
+            await loadJobs();
+          }
+        } catch (error) {
+          setStatus("Upload failed", true);
+        }
+      }
+
+      async function loadJobs() {
+        const rows = await api("/ingestion/jobs");
+        const body = document.getElementById("jobsBody");
+        body.innerHTML = "";
+
+        const filtered = rows.filter(r => !selectedCompanyId || r.company_id === selectedCompanyId);
+
+        filtered.forEach(r => {
+          const tr = document.createElement("tr");
+          const cls = statusClass(r.status);
+          tr.innerHTML = `<td>${r.id}</td><td>${r.company_id}</td><td>${r.file_name}</td><td><span class="status-pill ${cls}">${r.status}</span></td><td>${r.message || ""}</td>`;
+          body.appendChild(tr);
+        });
+      }
+
+      // Initialize dashboard when page loads
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM loaded, initializing dashboard");
+        initDashboard();
+      });
+      
+      // Also call initDashboard directly as fallback
+      initDashboard();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+fastapi>=0.115.0
+uvicorn>=0.30.6
+sqlalchemy>=2.0.35
+pydantic>=2.11.0
+pydantic[email]>=2.11.0
+PyJWT>=2.9.0
+python-multipart>=0.0.12
+openpyxl>=3.1.5
+sahmk==0.6.1
+python-dotenv>=1.0.1
+pdfplumber

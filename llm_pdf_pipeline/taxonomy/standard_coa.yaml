@@ -1,0 +1,630 @@
+# Standard Chart of Accounts (CoA) — fixed taxonomy.
+# Cross-company key: every extracted line item maps to one of these codes.
+# Source of truth: Almajed_FY2025_Financial_Data_updated.xlsx (Standard CoA sheet).
+# 156 entries.
+
+accounts:
+- code: BS-NCA
+  name: Non-Current Assets
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-NCA-PPE
+  name: Property, Plant and Equipment
+  category: Tangible
+  statement: Balance Sheet
+- code: BS-NCA-ROU
+  name: Right-of-Use Assets
+  category: Lease
+  statement: Balance Sheet
+- code: BS-NCA-IP
+  name: Investment Properties
+  category: Tangible
+  statement: Balance Sheet
+- code: BS-NCA-INT
+  name: Intangible Assets
+  category: Intangible
+  statement: Balance Sheet
+- code: BS-NCA-INV
+  name: Long-term Investments
+  category: Investment
+  statement: Balance Sheet
+- code: BS-NCA-GW
+  name: Goodwill
+  category: Intangible
+  statement: Balance Sheet
+- code: BS-NCA-OTH
+  name: Other Non-Current Assets
+  category: Other
+  statement: Balance Sheet
+- code: BS-NCA-TOT
+  name: Total Non-Current Assets
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-CA
+  name: Current Assets
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-CA-INV
+  name: Inventories
+  category: Working capital
+  statement: Balance Sheet
+- code: BS-CA-TR
+  name: Trade Receivables
+  category: Working capital
+  statement: Balance Sheet
+- code: BS-CA-RP
+  name: Due from Related Parties
+  category: Related party
+  statement: Balance Sheet
+- code: BS-CA-PP
+  name: Prepayments and Other Debit Balances
+  category: Working capital
+  statement: Balance Sheet
+- code: BS-CA-CASH
+  name: Cash and Cash Equivalents
+  category: Liquidity
+  statement: Balance Sheet
+- code: BS-CA-FA
+  name: Short-term Financial Assets
+  category: Liquidity
+  statement: Balance Sheet
+- code: BS-CA-OTH
+  name: Other Current Assets
+  category: Other
+  statement: Balance Sheet
+- code: BS-CA-TOT
+  name: Total Current Assets
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-A-TOT
+  name: Total Assets
+  category: Total
+  statement: Balance Sheet
+- code: BS-EQ
+  name: Equity
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-EQ-SC
+  name: Share Capital
+  category: Contributed capital
+  statement: Balance Sheet
+- code: BS-EQ-SP
+  name: Share Premium
+  category: Contributed capital
+  statement: Balance Sheet
+- code: BS-EQ-SR
+  name: Statutory Reserve
+  category: Reserve
+  statement: Balance Sheet
+- code: BS-EQ-RE
+  name: Retained Earnings
+  category: Earnings
+  statement: Balance Sheet
+- code: BS-EQ-AR
+  name: Actuarial Remeasurement Reserve
+  category: OCI reserve
+  statement: Balance Sheet
+- code: BS-EQ-FV
+  name: Fair Value Reserve (FVOCI)
+  category: OCI reserve
+  statement: Balance Sheet
+- code: BS-EQ-FX
+  name: Foreign Currency Translation Reserve
+  category: OCI reserve
+  statement: Balance Sheet
+- code: BS-EQ-OTH
+  name: Other Reserves
+  category: Reserve
+  statement: Balance Sheet
+- code: BS-EQ-NCI
+  name: Non-Controlling Interest
+  category: Minority
+  statement: Balance Sheet
+- code: BS-EQ-TOT
+  name: Total Equity
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-NCL
+  name: Non-Current Liabilities
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-NCL-EOSB
+  name: Employee End-of-Service Benefits
+  category: Employee
+  statement: Balance Sheet
+- code: BS-NCL-LL
+  name: Lease Liabilities (Non-Current)
+  category: Lease
+  statement: Balance Sheet
+- code: BS-NCL-LD
+  name: Long-term Debt
+  category: Debt
+  statement: Balance Sheet
+- code: BS-NCL-DT
+  name: Deferred Tax Liabilities
+  category: Tax
+  statement: Balance Sheet
+- code: BS-NCL-PROV
+  name: Long-term Provisions
+  category: Provision
+  statement: Balance Sheet
+- code: BS-NCL-OTH
+  name: Other Non-Current Liabilities
+  category: Other
+  statement: Balance Sheet
+- code: BS-NCL-TOT
+  name: Total Non-Current Liabilities
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-CL
+  name: Current Liabilities
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-CL-LL
+  name: Lease Liabilities (Current)
+  category: Lease
+  statement: Balance Sheet
+- code: BS-CL-TP
+  name: Trade Payables
+  category: Working capital
+  statement: Balance Sheet
+- code: BS-CL-AP
+  name: Accruals and Other Credit Balances
+  category: Working capital
+  statement: Balance Sheet
+- code: BS-CL-RP
+  name: Due to Related Parties
+  category: Related party
+  statement: Balance Sheet
+- code: BS-CL-ZK
+  name: Zakat Provision
+  category: Tax
+  statement: Balance Sheet
+- code: BS-CL-IT
+  name: Income Tax Provision
+  category: Tax
+  statement: Balance Sheet
+- code: BS-CL-SD
+  name: Short-term Debt
+  category: Debt
+  statement: Balance Sheet
+- code: BS-CL-OTH
+  name: Other Current Liabilities
+  category: Other
+  statement: Balance Sheet
+- code: BS-CL-TOT
+  name: Total Current Liabilities
+  category: Subtotal
+  statement: Balance Sheet
+- code: BS-L-TOT
+  name: Total Liabilities
+  category: Total
+  statement: Balance Sheet
+- code: BS-EL-TOT
+  name: Total Equity and Liabilities
+  category: Total
+  statement: Balance Sheet
+- code: IS-REV
+  name: Revenue
+  category: Top-line
+  statement: Income Statement
+- code: IS-REV-GDS
+  name: Sales of Goods
+  category: Operating revenue
+  statement: Income Statement
+- code: IS-REV-SVC
+  name: Services Revenue
+  category: Operating revenue
+  statement: Income Statement
+- code: IS-REV-MFG
+  name: Manufacturing Service Revenue
+  category: Operating revenue
+  statement: Income Statement
+- code: IS-REV-OTH
+  name: Other Operating Revenue
+  category: Operating revenue
+  statement: Income Statement
+- code: IS-REV-DISC
+  name: Sales Discounts and Returns
+  category: Contra revenue
+  statement: Income Statement
+- code: IS-COR
+  name: Cost of Revenue
+  category: Operating cost
+  statement: Income Statement
+- code: IS-COR-COGS
+  name: Cost of Goods Sold
+  category: Direct cost
+  statement: Income Statement
+- code: IS-COR-STAFF
+  name: Staff Costs - Cost of Revenue
+  category: Labor
+  statement: Income Statement
+- code: IS-COR-DEP
+  name: Depreciation - Cost of Revenue
+  category: Non-cash
+  statement: Income Statement
+- code: IS-COR-AMORT
+  name: Amortization - Cost of Revenue
+  category: Non-cash
+  statement: Income Statement
+- code: IS-COR-INVP
+  name: Inventory Provisions
+  category: Provision
+  statement: Income Statement
+- code: IS-COR-PKG
+  name: Consumables and Packaging
+  category: Direct cost
+  statement: Income Statement
+- code: IS-COR-OTH
+  name: Other Cost of Revenue
+  category: Direct cost
+  statement: Income Statement
+- code: IS-GP
+  name: Gross Profit
+  category: Subtotal
+  statement: Income Statement
+- code: IS-SM
+  name: Selling and Marketing Expenses
+  category: Operating expense
+  statement: Income Statement
+- code: IS-SM-STAFF
+  name: Staff Costs - Selling and Marketing
+  category: Labor
+  statement: Income Statement
+- code: IS-SM-ADV
+  name: Advertising and Marketing
+  category: Marketing
+  statement: Income Statement
+- code: IS-SM-DEP
+  name: Depreciation - Selling and Marketing
+  category: Non-cash
+  statement: Income Statement
+- code: IS-SM-AMORT
+  name: Amortization - Selling and Marketing
+  category: Non-cash
+  statement: Income Statement
+- code: IS-SM-RENT
+  name: Rentals - Selling and Marketing
+  category: Occupancy
+  statement: Income Statement
+- code: IS-SM-UTIL
+  name: Utilities and Maintenance - S&M
+  category: Occupancy
+  statement: Income Statement
+- code: IS-SM-SHIP
+  name: Shipping and Logistics
+  category: Logistics
+  statement: Income Statement
+- code: IS-SM-COLL
+  name: Collection Expenses
+  category: Other operating
+  statement: Income Statement
+- code: IS-SM-HOSP
+  name: Hospitality and Supplies - S&M
+  category: Other operating
+  statement: Income Statement
+- code: IS-SM-GOV
+  name: Government Fees - S&M
+  category: Regulatory
+  statement: Income Statement
+- code: IS-SM-TECH
+  name: Technical Support - S&M
+  category: IT
+  statement: Income Statement
+- code: IS-SM-BANK
+  name: Bank Fees - S&M
+  category: Financial services
+  statement: Income Statement
+- code: IS-SM-FLEET
+  name: Fleet and Transportation
+  category: Logistics
+  statement: Income Statement
+- code: IS-SM-ECL
+  name: Expected Credit Loss Provisions
+  category: Provision
+  statement: Income Statement
+- code: IS-SM-OTH
+  name: Other S&M Expenses
+  category: Other operating
+  statement: Income Statement
+- code: IS-GA
+  name: General and Administrative Expenses
+  category: Operating expense
+  statement: Income Statement
+- code: IS-GA-STAFF
+  name: Staff Costs - G&A
+  category: Labor
+  statement: Income Statement
+- code: IS-GA-LIST
+  name: Listing and IPO Costs
+  category: Corporate
+  statement: Income Statement
+- code: IS-GA-PROF
+  name: Professional Fees
+  category: Corporate
+  statement: Income Statement
+- code: IS-GA-DEP
+  name: Depreciation - G&A
+  category: Non-cash
+  statement: Income Statement
+- code: IS-GA-AMORT
+  name: Amortization - G&A
+  category: Non-cash
+  statement: Income Statement
+- code: IS-GA-GOV
+  name: Government Fees - G&A
+  category: Regulatory
+  statement: Income Statement
+- code: IS-GA-TECH
+  name: Technical Support - G&A
+  category: IT
+  statement: Income Statement
+- code: IS-GA-RENT
+  name: Rentals - G&A
+  category: Occupancy
+  statement: Income Statement
+- code: IS-GA-UTIL
+  name: Utilities and Maintenance - G&A
+  category: Occupancy
+  statement: Income Statement
+- code: IS-GA-COMM
+  name: Communications - G&A
+  category: Corporate
+  statement: Income Statement
+- code: IS-GA-BANK
+  name: Bank Charges - G&A
+  category: Financial services
+  statement: Income Statement
+- code: IS-GA-OTH
+  name: Other G&A
+  category: Other operating
+  statement: Income Statement
+- code: IS-OP
+  name: Operating Profit
+  category: Subtotal
+  statement: Income Statement
+- code: IS-FIN
+  name: Finance Costs
+  category: Non-operating
+  statement: Income Statement
+- code: IS-FIN-LEASE
+  name: Finance Cost - Leases
+  category: Interest
+  statement: Income Statement
+- code: IS-FIN-LOAN
+  name: Finance Cost - Loans
+  category: Interest
+  statement: Income Statement
+- code: IS-FIN-EOSB
+  name: Finance Cost - EOSB
+  category: Interest
+  statement: Income Statement
+- code: IS-OTH
+  name: Other Income / Expenses
+  category: Non-operating
+  statement: Income Statement
+- code: IS-OTH-INV
+  name: Investment Income
+  category: Investment
+  statement: Income Statement
+- code: IS-OTH-LEASE
+  name: Lease Concessions / Modifications
+  category: Lease
+  statement: Income Statement
+- code: IS-OTH-DISP
+  name: Gains/Losses on Disposal
+  category: Capital
+  statement: Income Statement
+- code: IS-OTH-DIV
+  name: Dividend Income
+  category: Investment
+  statement: Income Statement
+- code: IS-OTH-OTH
+  name: Other Miscellaneous Income/Expense
+  category: Other
+  statement: Income Statement
+- code: IS-PBT
+  name: Profit Before Zakat and Tax
+  category: Subtotal
+  statement: Income Statement
+- code: IS-ZK
+  name: Zakat Expense
+  category: Tax
+  statement: Income Statement
+- code: IS-TX
+  name: Income Tax Expense
+  category: Tax
+  statement: Income Statement
+- code: IS-NP
+  name: Net Profit for the Year
+  category: Bottom-line
+  statement: Income Statement
+- code: IS-OCI
+  name: Other Comprehensive Income
+  category: OCI
+  statement: Income Statement
+- code: IS-OCI-FX
+  name: OCI - FX Translation
+  category: OCI
+  statement: Income Statement
+- code: IS-OCI-FVOCI
+  name: OCI - Fair Value Changes (FVOCI)
+  category: OCI
+  statement: Income Statement
+- code: IS-OCI-ACT
+  name: OCI - Actuarial Remeasurement
+  category: OCI
+  statement: Income Statement
+- code: IS-TCI
+  name: Total Comprehensive Income
+  category: Subtotal
+  statement: Income Statement
+- code: IS-EPS
+  name: Earnings Per Share
+  category: Per share
+  statement: Income Statement
+- code: CF-OP
+  name: Net Cash from Operating Activities
+  category: Operating
+  statement: Cash Flow Statement
+- code: CF-OP-PBT
+  name: CF - Profit Before Tax
+  category: Operating
+  statement: Cash Flow Statement
+- code: CF-OP-ADJ
+  name: CF - Non-cash Adjustments
+  category: Operating
+  statement: Cash Flow Statement
+- code: CF-OP-WC
+  name: CF - Working Capital Changes
+  category: Operating
+  statement: Cash Flow Statement
+- code: CF-OP-OTH
+  name: CF - Other Operating Items
+  category: Operating
+  statement: Cash Flow Statement
+- code: CF-INV
+  name: Net Cash from Investing Activities
+  category: Investing
+  statement: Cash Flow Statement
+- code: CF-INV-CAPEX
+  name: CF - Capital Expenditure
+  category: Investing
+  statement: Cash Flow Statement
+- code: CF-INV-INV
+  name: CF - Investment Activity
+  category: Investing
+  statement: Cash Flow Statement
+- code: CF-INV-DISP
+  name: CF - Disposal Proceeds
+  category: Investing
+  statement: Cash Flow Statement
+- code: CF-FIN
+  name: Net Cash from Financing Activities
+  category: Financing
+  statement: Cash Flow Statement
+- code: CF-FIN-LEASE
+  name: CF - Lease Payments
+  category: Financing
+  statement: Cash Flow Statement
+- code: CF-FIN-DEBT
+  name: CF - Debt Movements
+  category: Financing
+  statement: Cash Flow Statement
+- code: CF-FIN-DIV
+  name: CF - Dividends
+  category: Financing
+  statement: Cash Flow Statement
+- code: CF-FIN-EQ
+  name: CF - Equity Movements
+  category: Financing
+  statement: Cash Flow Statement
+- code: CF-NET
+  name: Net Change in Cash
+  category: Reconciliation
+  statement: Cash Flow Statement
+- code: CF-FX
+  name: FX Effects on Cash
+  category: Reconciliation
+  statement: Cash Flow Statement
+- code: CF-BEG
+  name: Cash at Beginning of Period
+  category: Reconciliation
+  statement: Cash Flow Statement
+- code: CF-END
+  name: Cash at End of Period
+  category: Reconciliation
+  statement: Cash Flow Statement
+- code: CF-NCT
+  name: Non-Cash Transactions
+  category: Disclosure
+  statement: Cash Flow Statement
+- code: EQ-MV-OPEN
+  name: Equity - Opening Balance
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-NP
+  name: Equity - Net Profit
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-OCI
+  name: Equity - OCI Movement
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-DIV
+  name: Equity - Dividends
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-TRX
+  name: Equity - Transfers
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-IPO
+  name: Equity - IPO/Listing Adjustments
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-SR
+  name: Equity - Statutory Reserve Formation
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-FV
+  name: Equity - FV Disposal Adjustments
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-CLOSE
+  name: Equity - Closing Balance
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-TCI
+  name: Equity - Total Comprehensive Income
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: EQ-MV-DRV
+  name: Equity - Reversal of Dividends
+  category: Movement
+  statement: Statement of Changes in Equity
+- code: DISC-CC
+  name: Capital Commitments
+  category: Disclosure
+  statement: Disclosure
+- code: DISC-CTG
+  name: Contingencies
+  category: Disclosure
+  statement: Disclosure
+- code: DISC-RP-NAR
+  name: Related Party Narrative
+  category: Disclosure
+  statement: Disclosure
+- code: DISC-RISK
+  name: Risk Management Narrative
+  category: Disclosure
+  statement: Disclosure
+- code: SUP-SHARES
+  name: Number of Shares Outstanding
+  category: Supplementary
+  statement: Supplementary
+- code: SUP-PARV
+  name: Par Value per Share
+  category: Supplementary
+  statement: Supplementary
+- code: SUP-RATE
+  name: Discount/Interest Rate
+  category: Supplementary
+  statement: Supplementary
+- code: SUP-AGE
+  name: Retirement Age
+  category: Supplementary
+  statement: Supplementary
+- code: SUP-SAL
+  name: Salary Increase Rate
+  category: Supplementary
+  statement: Supplementary
+- code: SUP-DPS
+  name: Dividend Per Share
+  category: Supplementary
+  statement: Supplementary
+- code: SUP-SENS
+  name: Sensitivity Analysis
+  category: Supplementary
+  statement: Supplementary

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asas — Financial Extractor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 16px 60px;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────────── */
+    .top-bar {
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .logo-mark {
+      width: 38px; height: 38px;
+      background: #1F4E78;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 17px; color: #fff; letter-spacing: -0.5px;
+    }
+    .brand { font-size: 18px; font-weight: 700; color: #1F4E78; }
+    .brand span { font-weight: 400; color: #718096; }
+
+    /* ── Card ─────────────────────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 2px 20px rgba(0,0,0,.08);
+      width: 100%;
+      max-width: 640px;
+      padding: 36px 40px;
+    }
+    .card-title { font-size: 20px; font-weight: 700; color: #1a202c; }
+    .card-sub   { margin-top: 6px; font-size: 13.5px; color: #718096; line-height: 1.5; }
+
+    /* ── Drop zone ────────────────────────────────────────────────────────── */
+    .drop-zone {
+      margin-top: 24px;
+      border: 2px dashed #cbd5e0;
+      border-radius: 14px;
+      padding: 38px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      background: #f7fafc;
+    }
+    .drop-zone:hover,
+    .drop-zone.over { border-color: #1F4E78; background: #ebf4ff; }
+    .drop-zone input { display: none; }
+    .drop-icon { font-size: 40px; line-height: 1; }
+    .drop-label { margin-top: 10px; font-size: 15px; font-weight: 600; color: #2d3748; }
+    .drop-hint  { margin-top: 4px; font-size: 12.5px; color: #a0aec0; }
+
+    /* ── File chip ────────────────────────────────────────────────────────── */
+    .file-chip {
+      display: none;
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #ebf8ff;
+      border-radius: 10px;
+      align-items: center;
+      gap: 10px;
+    }
+    .file-chip.show { display: flex; }
+    .file-chip-name { flex: 1; font-size: 13.5px; font-weight: 600; color: #2b6cb0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-chip-size { font-size: 12px; color: #90cdf4; white-space: nowrap; }
+    .file-chip-remove { cursor: pointer; color: #90cdf4; font-size: 18px; line-height: 1; flex-shrink: 0; }
+    .file-chip-remove:hover { color: #2b6cb0; }
+
+    /* ── Primary button ───────────────────────────────────────────────────── */
+    .btn-primary {
+      margin-top: 20px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 11px;
+      background: #1F4E78;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s, opacity .2s;
+      letter-spacing: .01em;
+    }
+    .btn-primary:hover:not(:disabled) { background: #174069; }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ── Divider ──────────────────────────────────────────────────────────── */
+    .divider { margin: 28px 0; border: none; border-top: 1px solid #e2e8f0; }
+
+    /* ── Step bar ─────────────────────────────────────────────────────────── */
+    .steps {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 18px;
+    }
+    .step {
+      flex: 1;
+      padding: 7px 4px;
+      text-align: center;
+      font-size: 10.5px;
+      font-weight: 700;
+      border-radius: 7px;
+      background: #edf2f7;
+      color: #a0aec0;
+      transition: background .3s, color .3s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .step.active { background: #bee3f8; color: #2b6cb0; }
+    .step.done   { background: #c6f6d5; color: #276749; }
+
+    /* ── Log terminal ─────────────────────────────────────────────────────── */
+    .log-wrap {
+      background: #0d1117;
+      border-radius: 12px;
+      padding: 14px 16px;
+      height: 210px;
+      overflow-y: auto;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11.5px;
+      line-height: 1.65;
+      scroll-behavior: smooth;
+    }
+    .log-line { color: #8b949e; }
+    .log-line.INFO    { color: #3fb950; }
+    .log-line.WARNING { color: #d29922; }
+    .log-line.ERROR   { color: #f85149; }
+
+    /* ── Result card ──────────────────────────────────────────────────────── */
+    .result-card {
+      display: none;
+      margin-top: 18px;
+      padding: 18px 20px;
+      background: #f0fff4;
+      border: 1px solid #9ae6b4;
+      border-radius: 12px;
+    }
+    .result-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #276749;
+      margin-bottom: 14px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 480px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stat-box { }
+    .stat-label { font-size: 10px; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: .06em; }
+    .stat-value { margin-top: 3px; font-size: 22px; font-weight: 800; color: #1a202c; }
+    .stat-sub   { font-size: 10px; color: #a0aec0; }
+
+    /* ── Warning pills ────────────────────────────────────────────────────── */
+    .warn-row {
+      display: none;
+      margin-top: 12px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .warn-pill {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .warn-pill.yellow { background: #fffff0; color: #975a16; border: 1px solid #f6e05e; }
+    .warn-pill.green  { background: #f0fff4; color: #276749; border: 1px solid #9ae6b4; }
+
+    /* ── Download button ──────────────────────────────────────────────────── */
+    .btn-download {
+      display: none;
+      margin-top: 16px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 11px;
+      background: #276749;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .btn-download:hover { background: #1c5035; }
+
+    /* ── Error card ───────────────────────────────────────────────────────── */
+    .error-card {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 16px;
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      border-radius: 10px;
+      color: #c53030;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* ── Progress section visibility ──────────────────────────────────────── */
+    .progress-section { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="logo-mark">AF</div>
+    <div class="brand">Asas <span>Financial Extractor</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Extract Financial Statements</div>
+    <p class="card-sub">
+      Upload an audited annual report PDF. The tool runs a 2-pass Claude extraction
+      and outputs a normalized 10-sheet Excel workbook mapped to a standard Chart of Accounts.
+    </p>
+
+    <!-- Upload area -->
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".pdf" />
+      <div class="drop-icon">📄</div>
+      <div class="drop-label">Drop annual report PDF here</div>
+      <div class="drop-hint">or click to browse &nbsp;·&nbsp; PDF only &nbsp;·&nbsp; max 50 MB</div>
+    </div>
+
+    <div class="file-chip" id="fileChip">
+      <span>📑</span>
+      <span class="file-chip-name" id="chipName"></span>
+      <span class="file-chip-size" id="chipSize"></span>
+      <span class="file-chip-remove" id="chipRemove" title="Remove">✕</span>
+    </div>
+
+    <button class="btn-primary" id="extractBtn" disabled>Extract Financial Data</button>
+
+    <!-- Progress section -->
+    <div class="progress-section" id="progressSection">
+      <hr class="divider" />
+
+      <div class="steps" id="stepBar">
+        <div class="step" id="s-upload">Upload</div>
+        <div class="step" id="s-text">Parse PDF</div>
+        <div class="step" id="s-pass1">Pass 1</div>
+        <div class="step" id="s-pass2">Pass 2</div>
+        <div class="step" id="s-build">Build</div>
+        <div class="step" id="s-done">Done</div>
+      </div>
+
+      <div class="log-wrap" id="logWrap"></div>
+
+      <div class="result-card" id="resultCard">
+        <div class="result-title">✅ Extraction complete</div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-label">Rows</div>
+            <div class="stat-value" id="rRows">—</div>
+            <div class="stat-sub">extracted</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">API Cost</div>
+            <div class="stat-value" id="rCost">—</div>
+            <div class="stat-sub">USD</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Tokens In</div>
+            <div class="stat-value" id="rTokIn">—</div>
+            <div class="stat-sub">prompt</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Tokens Out</div>
+            <div class="stat-value" id="rTokOut">—</div>
+            <div class="stat-sub">completion</div>
+          </div>
+        </div>
+        <div class="warn-row" id="warnRow"></div>
+      </div>
+
+      <a class="btn-download" id="downloadBtn">⬇&nbsp; Download Excel Workbook</a>
+
+      <div class="error-card" id="errorCard"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────────────────────────
+    let selectedFile = null;
+
+    // ── Element refs ───────────────────────────────────────────────────────────
+    const dropZone    = document.getElementById('dropZone');
+    const fileInput   = document.getElementById('fileInput');
+    const fileChip    = document.getElementById('fileChip');
+    const chipName    = document.getElementById('chipName');
+    const chipSize    = document.getElementById('chipSize');
+    const chipRemove  = document.getElementById('chipRemove');
+    const extractBtn  = document.getElementById('extractBtn');
+    const progressSec = document.getElementById('progressSection');
+    const logWrap     = document.getElementById('logWrap');
+    const resultCard  = document.getElementById('resultCard');
+    const warnRow     = document.getElementById('warnRow');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const errorCard   = document.getElementById('errorCard');
+
+    // ── Drag-and-drop ──────────────────────────────────────────────────────────
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('over');
+      const f = e.dataTransfer.files[0];
+      if (f && f.name.toLowerCase().endsWith('.pdf')) setFile(f);
+    });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) setFile(fileInput.files[0]);
+    });
+    chipRemove.addEventListener('click', e => { e.stopPropagation(); clearFile(); });
+
+    function setFile(f) {
+      selectedFile  = f;
+      chipName.textContent = f.name;
+      chipSize.textContent = (f.size / 1024 / 1024).toFixed(1) + ' MB';
+      fileChip.classList.add('show');
+      extractBtn.disabled = false;
+    }
+    function clearFile() {
+      selectedFile = null;
+      fileInput.value = '';
+      fileChip.classList.remove('show');
+      extractBtn.disabled = true;
+    }
+
+    // ── Step helpers ───────────────────────────────────────────────────────────
+    function step(id, state) {          // state: 'active' | 'done' | ''
+      const el = document.getElementById(id);
+      el.className = 'step' + (state ? ' ' + state : '');
+    }
+    function doneStep(id) { step(id, 'done'); }
+    function activeStep(id) { step(id, 'active'); }
+
+    // ── Log helpers ────────────────────────────────────────────────────────────
+    function addLog(text, level) {
+      const line = document.createElement('div');
+      line.className = 'log-line' + (level ? ' ' + level : '');
+      line.textContent = text;
+      logWrap.appendChild(line);
+      logWrap.scrollTop = logWrap.scrollHeight;
+    }
+
+    function classifyLog(text) {
+      if (text.includes(' ERROR '))   return 'ERROR';
+      if (text.includes(' WARNING ')) return 'WARNING';
+      if (text.includes(' INFO '))    return 'INFO';
+      return '';
+    }
+
+    // ── Main extract flow ──────────────────────────────────────────────────────
+    extractBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      // Reset UI
+      extractBtn.disabled   = true;
+      progressSec.style.display = 'block';
+      resultCard.style.display  = 'none';
+      downloadBtn.style.display = 'none';
+      errorCard.style.display   = 'none';
+      warnRow.style.display     = 'none';
+      logWrap.innerHTML = '';
+      ['s-upload','s-text','s-pass1','s-pass2','s-build','s-done'].forEach(id => step(id, ''));
+
+      activeStep('s-upload');
+      addLog('Uploading ' + selectedFile.name + '…', 'INFO');
+
+      // Upload
+      const form = new FormData();
+      form.append('file', selectedFile);
+
+      let jobId;
+      try {
+        const res  = await fetch('/upload', { method: 'POST', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Upload failed');
+        jobId = data.job_id;
+        doneStep('s-upload');
+        addLog('Upload complete — job ' + jobId + '. Starting extraction…', 'INFO');
+      } catch (err) {
+        addLog('Upload error: ' + err.message, 'ERROR');
+        errorCard.textContent = err.message;
+        errorCard.style.display = 'block';
+        extractBtn.disabled = false;
+        return;
+      }
+
+      // Stream progress via SSE
+      const es = new EventSource('/stream/' + jobId);
+
+      es.onmessage = e => {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'ping') return;
+
+        if (msg.type === 'log') {
+          const text  = msg.msg;
+          const level = msg.level || classifyLog(text);
+          addLog(text, level);
+
+          // Drive step bar from log content
+          if (text.includes('extracting page text'))                         { activeStep('s-text'); }
+          if (text.includes('Pass 1: primary statements'))                   { doneStep('s-text'); activeStep('s-pass1'); }
+          if (text.includes('Pass 1: loading cached'))                       { doneStep('s-text'); doneStep('s-pass1'); }
+          if (text.includes('Pass 2: notes'))                                { doneStep('s-pass1'); activeStep('s-pass2'); }
+          if (text.includes('Pass 2: loading cached'))                       { doneStep('s-pass1'); doneStep('s-pass2'); }
+          if (text.includes('master rows:'))                                 { doneStep('s-pass2'); activeStep('s-build'); }
+          if (text.includes('xlsx written'))                                 { doneStep('s-build'); activeStep('s-done'); }
+        }
+
+        if (msg.type === 'done') {
+          es.close();
+          doneStep('s-done');
+          const r = msg.result;
+
+          document.getElementById('rRows').textContent   = r.rows.toLocaleString();
+          document.getElementById('rCost').textContent   = '$' + r.cost_usd.toFixed(4);
+          document.getElementById('rTokIn').textContent  = fmtK(r.tokens_in);
+          document.getElementById('rTokOut').textContent = fmtK(r.tokens_out);
+
+          // Sanity / unmapped pills
+          const pills = [];
+          if (r.sanity_warnings === 0) pills.push({ cls: 'green',  text: '✓ 0 sanity warnings' });
+          else                          pills.push({ cls: 'yellow', text: '⚠ ' + r.sanity_warnings + ' sanity warning' + (r.sanity_warnings > 1 ? 's' : '') });
+          if (r.unmapped_rows === 0)   pills.push({ cls: 'green',  text: '✓ 0 unmapped rows' });
+          else                          pills.push({ cls: 'yellow', text: '⚠ ' + r.unmapped_rows + ' unmapped row' + (r.unmapped_rows > 1 ? 's' : '') });
+
+          warnRow.innerHTML = pills.map(p => `<span class="warn-pill ${p.cls}">${p.text}</span>`).join('');
+          warnRow.style.display = 'flex';
+
+          resultCard.style.display  = 'block';
+          downloadBtn.href          = '/download/' + jobId;
+          downloadBtn.style.display = 'block';
+          extractBtn.disabled       = false;
+          extractBtn.textContent    = 'Extract Another PDF';
+        }
+
+        if (msg.type === 'error') {
+          es.close();
+          addLog('Extraction failed: ' + msg.msg, 'ERROR');
+          errorCard.textContent   = msg.msg;
+          errorCard.style.display = 'block';
+          extractBtn.disabled     = false;
+        }
+      };
+
+      es.onerror = () => {
+        es.close();
+        addLog('Connection lost.', 'ERROR');
+        extractBtn.disabled = false;
+      };
+    });
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+    function fmtK(n) {
+      if (n == null) return '—';
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+      if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'k';
+      return String(n);
+    }
+  </script>
+</body>
+</html>

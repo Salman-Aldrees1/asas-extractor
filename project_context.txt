@@ -1,0 +1,400 @@
+Eugene Tsaplin requested payment for the project
+
+2:59 PM
+Hi Salman,
+
+
+
+As promised during our call, I've done the research on open-source platforms that can serve as a foundation for your financial analysis platform for the Saudi market.
+
+
+
+Good news — there are several strong options, and we don't need to build from scratch. Below is my recommended approach in two phases.
+
+
+
+📌 PHASE 1 — MVP / Investor Demo ($2,000–3,500)
+
+
+
+Goal: A working prototype with real data for 10–15 companies to show investors and test the concept.
+
+
+
+Tech stack:
+• Streamlit (open-source Python framework) — fastest way to build an interactive web app with financial charts. We can have a working demo in 1–2 weeks.
+• Plotly — interactive charting library. Supports bar charts, line charts, time series — everything needed for revenue, profit margins, balance sheet visualization. We can add custom markers on charts (like CEO appointment dates overlaid on revenue timeline — exactly what you described during our call).
+• PostgreSQL — database to store all the structured financial data from your Excel files.
+• n8n — open-source automation tool to handle the pipeline: PDF upload → AI extraction → database → dashboard refresh.
+
+
+
+What this MVP will include:
+— Company profile page with ticker, name, sector
+— Income Statement, Balance Sheet, Cash Flow charts (5-year history)
+— Key financial ratios (calculated automatically from raw data)
+— Filters by company, sector, period
+— Basic AI chatbot to ask questions about company metrics
+
+
+
+What it won't include (saved for Phase 2):
+— Production-grade UI/UX
+— Scalability for hundreds of concurrent users
+— News feed integration from Saudi Exchange
+
+
+
+📌 PHASE 2 — Scalable Product ($5,000–10,000)
+
+
+
+Once the MVP is validated, we move the platform to a production-grade architecture:
+
+
+
+Option A — Apache Superset or Metabase
+These are open-source BI platforms used by companies like Airbnb and thousands of others. They offer:
+— 40+ chart types out of the box
+— Drag-and-drop dashboard builder
+— Embeddable dashboards (can be placed inside your own branded website)
+— Role-based access control (free vs. premium users in the future)
+— Native connection to PostgreSQL (where your data lives)
+
+
+
+Superset is more powerful and flexible. Metabase is simpler and faster to set up. I'll recommend the best fit once we see the MVP results.
+
+
+
+Option B — Appsmith or ToolJet (low-code platforms)
+If you want a UI closer to GuruFocus style with custom pages per company, these open-source low-code platforms let us build that faster than coding from scratch. They have ready-made widgets for tables, charts, and forms, and connect directly to databases and APIs.
+
+
+
+For the AI chatbot, we would use LangChain + RAG (Retrieval-Augmented Generation) connected to your company database, so users can ask natural language questions like "What is the revenue per employee for Mahara?" and get accurate answers based solely on official financial data.
+
+
+
+📌 BONUS OPTION — OpenBB Platform
+
+
+
+OpenBB is an open-source project originally built as a free alternative to Bloomberg Terminal. It already has built-in logic for displaying Income Statements, Balance Sheets, and Cash Flows. If we can successfully replace their default data sources (US markets) with your Saudi data — this could accelerate development significantly. I need to verify this by checking their SDK documentation, which I can do as a next step.
+
+
+
+🔜 NEXT STEPS
+
+
+
+From my side:
+1. I can prepare a more detailed technical specification with exact timelines for Phase 1
+2. I can verify whether OpenBB SDK supports custom data providers (this could change the approach)
+
+
+
+From your side:
+1. Feature list — what charts and metrics are most important for the MVP? (even rough sketches or screenshots from GuruFocus would help)
+2. Sample data — if you can share 2–3 company Excel files, I can build a quick proof-of-concept
+3. Priority: do you want to optimize for speed (show investors fast) or for scalability (build it right from the start)?
+
+
+
+Looking forward to your thoughts, Salman.
+
+
+
+Best regards,
+Eugene
+
+View details
+SA
+Salman Aldrees
+8:44 PM
+Hi Eugen,
+
+Eugene Tsaplin
+9:03 PM
+Hello
+
+SA
+Salman Aldrees
+9:04 PM
+thank you for quick research, it's a great news.. Let's go ahead.
+
+
+
+let's go ahead with the points from your side, I would like to see the detailed technical specifications for phase 1... especially the n8n part, It would be great if I can validate how I can automate getting the information out of pdf, I attached 2 PDFs just for you to know the format and type of info we will need to get out of the PDFs.
+
+
+
+So I will wait for the detailed technical specifications as well as the OpenBB SDK so we can finalize the approach.
+
+
+
+from my side, regarding the priority, Speed is a great thing, not because I will be going to investors, because visualization is very important for me, So I would like to see a quick MVP, I will validate it with my connections and inner cycle then most probably will need you to make changes and add new features before it will be ready for the investors.. Once I'm clear on that, we can go for the scalable version.
+
+
+
+I will work during the next a few days to finalize the feature list, and sample data and will provide it as soon as possible
+
+
+
+thank you and looking forward to getting started with you
+
+2 files 
+6306_0_2025-03-27_16-10-52_En.pdf
+3 MB
+6306_0_2024-10-01_16-26-03_En.pdf
+969 kB
+Eugene Tsaplin added Andrey Iskoskov to the room
+
+Eugene Tsaplin
+9:05 PM
+Sure, please meet Andrey Iskoskov my lead engineer. Andrey, please take a look at the project and send in more detailed specification.
+
+Andrey Iskoskov
+9:46 PM
+Hi Salman,
+
+
+
+Nice to meet you, thanks for the PDFs — I checked them, structure looks clear.
+
+
+
+Here’s a practical MVP approach focused on speed. I’ll also list tech options so we keep flexibility:
+
+
+
+Main parts:
+• PDF upload (manual for now)
+• PDF → structured data (key part)
+• Database
+• Simple dashboard
+
+
+
+Tech options (we’ll finalize after quick tests):
+• Backend / pipeline: Python (FastAPI for API layer)
+• PDF parsing: pdfplumber / PyMuPDF (fitz)
+• Data processing: pandas
+• LLM layer: OpenAI API (or similar) for structuring + Q&A
+• Orchestration: n8n (optional)
+• Database: PostgreSQL
+• Dashboard: Streamlit (fastest) or similar lightweight option
+• Charts: Plotly
+
+
+
+PDF pipeline:
+• extract tables/text from PDF
+• structure into financial statements
+• normalize metrics
+• basic validation
+• store in DB
+
+
+
+We’ll keep this flexible so you can add new data later (like CEO, etc.) without reprocessing everything.
+
+
+
+n8n can be used just as an orchestrator, core logic in Python.
+
+
+
+Dashboard:
+• company page
+• revenue / profit / basic metrics (5Y)
+• simple filters
+
+
+
+AI (basic):
+• simple Q&A over data (no complex setup yet)
+
+
+
+Estimate:
+~50 hours
+at $60/hour → approximately 3 thousand
+
+
+
+⸻
+
+
+
+Next steps:
+• I’ll test extraction on your PDFs
+• check OpenBB as an optional accelerator
+
+
+
+From your side:
+• list of key metrics/charts
+• sample Excel you mentioned on a call with Eugene if available
+
+
+
+Then we can lock scope and start.
+
+Sunday, Mar 29
+SA
+Salman Aldrees
+12:16 PM
+Hi Andrey,
+
+
+
+Nice to meet you too
+
+
+
+I attached the following:
+
+
+
+1- Feature Mockup PDF - this is a list and a mockup of the look and feel, on the top of each page, I mentioned the reference to where you can see this in the platform. for the purpose of testing, you can select any chart or table in the summary page and do the testing.
+
+
+
+2- 3 excel sheets for the financial statements of one of the companies (same one I shared their PDFs earlier).
+
+
+
+3- my logo ( Domain AsasFinancials.com).
+
+
+
+Please let me know if you need anything further.
+
+
+
+Regards
+
+Asas Financials
+Asas Financials
+6 files 
+
+black2 w.png
+75 kB
+Features mockup.pdf
+16 MB
+
+white W.png
+71 kB
+al majed oud co ( balance sheet ).xlsx
+54 kB
+al majed oud co. (cash flow).xlsx
+57 kB
+al majed oud co.( income statement ).xlsx
+54 kB
+Andrey Iskoskov
+1:52 PM
+Hi Salman,
+
+
+
+Thanks for sharing everything — this is very helpful!
+
+
+
+The mockups and references are especially useful, it’s always much easier to move fast when we have a clear visual direction 👍
+
+
+
+Everything looks clear from our side, we’re ready to get started.
+
+
+
+Let’s proceed with the contract, and we’ll aim to show you the first working results within the next few days.
+
+
+
+Best regards,
+Andrey
+
+SA
+Salman Aldrees
+2:09 PM
+Hi Andrey,
+
+
+
+Can we have more details in the contract, just to manage the expectations. Also, can you provide me with the test cases that you will need to see as per your last communications. I want to ensure that we start a clear contract.
+
+
+
+Before we start working on the execution, I want to have a clear idea on what's your plan to get the info from PDF to presentation.
+
+
+
+Thanks
+
+Monday, Mar 30
+Andrey Iskoskov
+11:57 AM
+Hi Salman,
+
+
+
+I took some time and ran quick tests on the PDFs you provided and matched it against Excel files you sent. You can see the results attached - that is what was extracted from PDF.
+
+
+
+Quick overview:
+- exact matches 43/46 metrics
+- reclassification/presentation differences 3/46 metrics (For 2022 Cash Flow: "Net cash from operating activities" deviated by 700,495, "Net cash used in investing activities" deviates by 177,473, "Cash at end of year" deviates by exactly (700,495+177,473=) 877,968 - so it is much more likely the data reclassification/presentation differences rather than OCR/Extraction issue)
+
+
+
+Addressing the question "what is my plan to get info from PDF":
+
+
+
+- Document routing -> OCR/layout detection (Tesseract) -> table/text extraction (PyMuPDF / pdfplumber / pdftotext) -> optional fallback to LLM structured output tool -> schema mapping (IFRS/GAAP-aware) -> cross-source reconciliation (conventional pdftotext libraries vs OCR vs optional LLM) -> confidence scoring
+
+
+
+- Sanity checks (e.g., Assets = Liabilities + Equity, cash flow roll-forward)
+
+
+
+- presentation/reclassification handling (TBD)
+
+
+
+Let me know if you have any questions!
+
+
+
+Best regards,
+Andrey
+
+extracted_financials.json 
+extracted_financials.json
+6 kB
+SA
+Salman Aldrees
+1:19 PM
+I just accepted the contract, please let’s touch base while you are working on it to make sure we are heading to the right direction.
+
+
+
+Best of luck
+Salman
+
+Andrey Iskoskov
+1:41 PM
+Thanks! Sure, I will update you on progress and aim to show you visual and interactive results as frequent as possible.
+
+
+
+I want to show you the initial setup within 1-2 days and get your feedback.
+
+
+
+Feel free to reach out anytime if you have any questions!
