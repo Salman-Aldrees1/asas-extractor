@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from pathlib import Path
 from typing import Iterable
 
 import pdfplumber
+
+log = logging.getLogger(__name__)
 
 
 def sha256_of(path: Path | str) -> str:
@@ -24,9 +27,14 @@ def extract_text_by_page(pdf_path: Path | str) -> list[str]:
     """
     pages: list[str] = []
     with pdfplumber.open(str(pdf_path)) as pdf:
-        for page in pdf.pages:
+        total = len(pdf.pages)
+        for i, page in enumerate(pdf.pages):
             txt = page.extract_text() or ""
             pages.append(txt)
+            # Log progress every 20 pages so the SSE stream shows the job is alive
+            n = i + 1
+            if n == 1 or n % 20 == 0 or n == total:
+                log.info("PDF text pass: page %d / %d", n, total)
     return pages
 
 
@@ -82,7 +90,9 @@ def extract_row_aware_text_by_page(pdf_path: Path | str) -> list[str]:
     """
     pages: list[str] = []
     with pdfplumber.open(str(pdf_path)) as pdf:
-        for page in pdf.pages:
+        total = len(pdf.pages)
+        log.info("Parsing PDF: %d pages (row-aware mode)", total)
+        for i, page in enumerate(pdf.pages):
             words = page.extract_words(
                 keep_blank_chars=False,
                 use_text_flow=True,
@@ -90,10 +100,14 @@ def extract_row_aware_text_by_page(pdf_path: Path | str) -> list[str]:
             )
             if not words:
                 pages.append("")
-                continue
-            rows = _cluster_words_into_rows(words, y_tol=3.0)
-            lines = [_row_to_line(r) for r in rows]
-            pages.append("\n".join(l for l in lines if l))
+            else:
+                rows = _cluster_words_into_rows(words, y_tol=3.0)
+                lines = [_row_to_line(r) for r in rows]
+                pages.append("\n".join(l for l in lines if l))
+            # Log progress every 15 pages so the SSE stream shows the job is alive
+            n = i + 1
+            if n % 15 == 0 or n == total:
+                log.info("Parsed page %d / %d", n, total)
     return pages
 
 

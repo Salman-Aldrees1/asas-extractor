@@ -23,6 +23,40 @@ from .xlsx_writer import write_xlsx
 log = logging.getLogger(__name__)
 
 
+# ── Pre-validation ─────────────────────────────────────────────────────────────
+
+# Keywords that must appear in a genuine financial-statement PDF.
+# We require at least 3 distinct matches to avoid false-negatives on
+# PDFs that only mention one or two finance terms incidentally.
+_FS_KEYWORDS = [
+    "balance sheet",
+    "statement of financial position",
+    "income statement",
+    "statement of profit",
+    "profit or loss",
+    "cash flow",
+    "total assets",
+    "total equity",
+    "shareholders' equity",
+    "revenue",
+    "net profit",
+    "earnings per share",
+    "current assets",
+    "non-current assets",
+    "current liabilities",
+]
+
+
+def _is_financial_statement(text: str) -> bool:
+    """Return True only if `text` looks like an audited financial report.
+
+    Checks for at least 3 distinct financial-statement keywords (case-insensitive).
+    """
+    low = text.lower()
+    found = sum(1 for kw in _FS_KEYWORDS if kw in low)
+    return found >= 3
+
+
 def _assemble(pages: list[str]) -> str:
     return "\n\n".join(f"=== PAGE {i + 1} ===\n{p}" for i, p in enumerate(pages))
 
@@ -36,7 +70,11 @@ def extract_pdf(pdf_path: Path | str, output_dir: Path | str) -> dict:
     log.info("hashing %s", pdf_path)
     sha = sha256_of(pdf_path)
 
-    log.info("extracting page text (row-aware)")
+    # Quick page count so the user knows what to expect
+    from .pdf_utils import page_count as _page_count
+    n_pages = _page_count(pdf_path)
+    log.info("PDF has %d pages — extracting text (this may take 1-3 min on large files)", n_pages)
+
     pages_row = extract_row_aware_text_by_page(pdf_path)
     # Also build a default-text version for fallback (some PDFs have flow
     # better than row-aware). We send row-aware to the LLM by default.
@@ -45,6 +83,16 @@ def extract_pdf(pdf_path: Path | str, output_dir: Path | str) -> dict:
     text_default = _assemble(pages_default)
     log.info("PDF: %d pages, row-aware text=%d chars, default text=%d chars",
              len(pages_row), len(text_row), len(text_default))
+
+    # ---- Pre-validation: abort early if this is not a financial report ----
+    if not _is_financial_statement(text_row):
+        raise ValueError(
+            "This PDF does not appear to contain financial statements. "
+            "Please upload an audited annual report that includes a Balance Sheet, "
+            "Income Statement, and Cash Flow Statement. "
+            "Company registration documents, prospectuses, and non-financial PDFs "
+            "are not supported."
+        )
 
     coa = load_coa()
     ledger = CostLedger()
@@ -81,6 +129,19 @@ def extract_pdf(pdf_path: Path | str, output_dir: Path | str) -> dict:
     # ---- Build flat rows ----
     rows = builder.build(primary, notes, coa=coa)
     log.info("master rows: %d", len(rows))
+
+    # Guard: if the LLM found no rows on the primary statements, something
+    # went wrong (image-only PDF, heavily scanned, unexpected layout, etc.)
+    primary_row_count = (
+        len(primary.balance_sheet) + len(primary.income_statement)
+        + len(primary.cash_flow) + len(primary.equity)
+    )
+    if primary_row_count == 0:
+        log.warning(
+            "Pass 1 returned 0 rows across all primary statements. "
+            "The PDF may be scanned/image-only, or the financial statements "
+            "may be in Arabic only. Check the raw JSON for LLM output."
+        )
 
     # ---- Optional fallback CoA mapping ----
     # Skip axis rows: they deliberately have empty std_item_code because
